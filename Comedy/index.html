@@ -1,0 +1,3023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <title>📼VCR📼 🎭</title>
+  <style>
+  html, body {
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#movie-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---------------- Poster ---------------- */
+
+#poster-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+  overflow: hidden;
+}
+
+#poster-border {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  background: none;
+  margin: 0 auto;
+  padding: 0;
+  z-index: 1;
+  overflow: visible;
+  width: auto;
+}
+
+#movie-poster {
+  max-width: 100vw;
+  max-height: 100vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: auto;
+  display: block;
+  user-select: none;
+  animation: glowing-tides 5s infinite ease-in-out;
+}
+
+
+
+/* Mobile poster optimization */
+@media (max-width: 768px) {
+  #movie-poster {
+    max-width: none;
+    max-height: none;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+  }
+  
+  #poster-wrapper {
+    overflow: hidden;
+  }
+}
+
+#movie-poster.loaded {
+  opacity: 1;
+}
+
+/* ---------------- Error Handling ---------------- */
+
+.error-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 0, 0, 0.9);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 10000;
+  max-width: 80%;
+  text-align: center;
+}
+
+
+
+/* ---------------- Fonts ---------------- */
+
+@font-face {
+  font-family: 'BlowBrush';
+  src: url('fonts/Portland-0jrd.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DigitalDisplay';
+  src: url('fonts/Digital7Italic-BW658.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SFMovie';
+  src: url('fonts/SF Movie Poster.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Details';
+  src: url('fonts/ClassicMarkerDemo-gwDPq.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noir';
+  src: url('fonts/FilmNoirAdventure-X3732.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Library';
+  src: url('fonts/Library3am-5V3Z.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bubble';
+  src: url('fonts/BubbleSansRegular-PVA5d.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'January';
+  src: url('fonts/JanuarySnack-0vzYX.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Show';
+  src: url('fonts/ShowgirlRegular-7OXJw.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Credits';
+  src: url('fonts/Uni_acc.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------------- Floating Buttons ---------------- */
+
+.floating-buttons {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  z-index: 1000;
+  transition: opacity 0.5s ease;
+}
+
+.floating-buttons.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.floating-buttons button,
+.floating-buttons > #save-button-wrapper {
+  height: 40px;
+  width: 40px;
+  background: rgba(255, 255, 255, 0.07);
+  border: none;
+  padding: 0;
+  margin: 0 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.floating-buttons button:hover,
+#save-button-wrapper:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ---------------- Info Panel ---------------- */
+
+#info-panel {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 700px;
+  height: 65px;
+  background: rgba(20, 20, 20, 0.9);
+  color: white;
+  padding: 2px 12px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  transition: all 0.3s ease-in-out;
+  z-index: 2000;
+  opacity: 0.8;
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+#info-panel.expanded {
+  height: auto;
+  opacity: 0.9;
+}
+
+#info-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#info-content {
+  pointer-events: auto;
+  opacity: 0.7;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 10px;
+  transition: opacity 0.2s ease 0.3s;
+}
+
+#info-panel.expanded #info-content {
+  opacity: 0.65;
+}
+
+#info-title {
+  font-size: 40px;
+  font-weight: normal;
+  font-family: 'Library', sans-serif;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+#info-meta {
+  font-size: 30px;
+  color: #ffcc00;
+  font-family: 'DigitalDisplay', monospace;
+  letter-spacing: 1px;
+}
+
+#info-description {
+  margin-top: 4px;
+  font-size: 22px;
+  line-height: 1;
+  color: #dce4e8;
+  word-wrap: break-word;
+  font-weight: normal;
+  font-family: 'Bubble', sans-serif;
+}
+
+#info-genre {
+  margin-top: 4px;
+  font-size: 18px;
+  color: #aaa;
+  display: block;
+  font-weight: normal;
+  font-family: 'SFMovie', sans-serif;
+}
+
+.crew-font {
+  font-family: 'SFMovie', sans-serif;
+}
+
+.genre-text {
+  font-size: 25px;
+  font-family: Noir;
+  line-height: 0.95;
+}
+
+.tmdb-link {
+  font-size: 25px;
+  font-family: Noir;
+  color: #00ccff;
+  text-decoration: none;
+  line-height: 0.95;
+}
+
+/* ---------------- Info Panel Buttons ---------------- */
+
+.info-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1px;
+  padding: 0;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 10px auto;
+  background: transparent;
+}
+
+.info-buttons button,
+#save-button-wrapper {
+  flex: 1 1 0;
+  max-width: calc(20% - 1px);
+  height: 63px;
+  background: rgba(255, 255, 255, 0.07);
+  border: none;
+  border-radius: 1px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.info-buttons button:hover,
+#save-button-wrapper:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ---------------- Shared Button Images ---------------- */
+
+.info-buttons button:hover img,
+#save-button-wrapper:hover img {
+  opacity: 1;
+}
+
+.info-buttons button img,
+#save-button {
+  width: 90%;
+  height: auto;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  opacity: 0.9;
+  pointer-events: none;
+  user-select: none;
+}
+
+.floating-buttons button img {
+  height: 100%;
+  width: auto;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+/* ---------------- Save Timer Ring ---------------- */
+
+#save-timer-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+#save-timer-ring circle {
+  fill: none;
+  stroke: red;
+  stroke-width: 4;
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+/* ---------------- Filter Panel ---------------- */
+
+#filter-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(20, 20, 20, 0.5);
+  color: white;
+  padding: 16px 20px;
+  z-index: 2000;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease-in-out;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+#filter-panel.active {
+  transform: translateY(0);
+}
+
+#filter-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  flex: 1;
+  min-width: 150px;
+  max-width: 200px;
+}
+
+.year-range-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  justify-content: center;
+}
+
+.filter-label {
+  font-size: 16px;
+  color: #ffcc00;
+  font-weight: bold;
+  white-space: nowrap;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+.year-sliders {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.year-slider {
+  width: 150px;
+  cursor: pointer;
+}
+
+.year-display {
+  font-size: 16px;
+  color: #ffcc00;
+  font-weight: bold;
+  text-align: center;
+  min-width: 120px;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+#filter-content label {
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: #ffcc00;
+  margin-bottom: 8px;
+  text-shadow: 0 0 5px rgba(255, 204, 0, 0.3);
+}
+
+#filter-content input,
+#filter-content select {
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 14px;
+  width: 100%;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+#filter-content input:focus,
+#filter-content select:focus {
+  outline: 2px solid #ffcc00;
+  border-color: #ffcc00;
+  box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Remove default browser styling */
+#filter-content select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffcc00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 30px;
+}
+
+/* Button row styling */
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.filter-buttons .overlay-btn {
+  min-width: 120px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+
+.filter-buttons .overlay-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+/* ---------------- Player ---------------- */
+
+.overlay-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.overlay-btn {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: 1px solid white;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#overlay-info {
+  opacity: 0;
+  transition: opacity 0.5s;
+  text-align: center;
+  margin-top: 20px;
+  color: white;
+  max-width: 80%;
+}
+
+#overlay-title {
+  font-size: 60px;
+  font-weight: bold;
+  font-family: 'Credits', sans-serif;
+  font-weight: normal;
+  text-transform: uppercase;
+}
+
+#overlay-meta {
+  color: #ffcc00;
+  font-size: 25px;
+}
+
+#overlay-description {
+  font-size: 20px;
+  margin-top: 8px;
+}
+
+#trailer-overlay {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#trailer-overlay.active {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: all;
+}
+
+.player-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1280px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+#player {
+  z-index: 9999;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.close-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#trailer-container {
+  position: relative;
+}
+
+#popout-overlay-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+#popout-overlay-button .overlay-btn {
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+/* ---------------- Misc ---------------- */
+
+#flag {
+  font-size: 1.4em;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* ---------------- Animations ---------------- */
+
+@keyframes glowing-tides {
+  0%   { box-shadow: -10px 0 10px red, 10px 0 10px red; }
+  25%  { box-shadow: -12px 0 12px orange, 12px 0 12px orange; }
+  50%  { box-shadow: -14px 0 14px yellow, 14px 0 14px yellow; }
+  75%  { box-shadow: -12px 0 12px orange, 12px 0 12px orange; }
+  100% { box-shadow: -10px 0 10px red, 10px 0 10px red; }
+}
+
+body.red-letter-mode {
+  background: #1a0000;
+  color: #ffcc00;
+  font-family: 'SFMovie', sans-serif;
+}
+
+body.red-letter-mode #info-panel {
+  background: rgba(90, 0, 0, 0.95);
+}
+
+/* VCR-style filter panel */
+body.vcr-mode #filter-panel {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 50%, #0a0a0a 100%);
+  border: 2px solid #ffcc00;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+}
+
+body.vcr-mode #filter-content {
+  background: rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid #ffcc00;
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+}
+
+body.vcr-mode .filter-row {
+  border-bottom: 1px solid rgba(255, 204, 0, 0.3);
+  padding-bottom: 15px;
+}
+
+body.vcr-mode .filter-label {
+  color: #ffcc00;
+  font-family: 'DigitalDisplay', monospace;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+}
+
+body.vcr-mode #filter-content label {
+  color: #ffcc00;
+  font-family: 'DigitalDisplay', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+}
+
+body.vcr-mode #filter-content select,
+body.vcr-mode #filter-content input {
+  background: #000 !important;
+  border: 1px solid #ffcc00 !important;
+  color: #ffcc00 !important;
+  font-family: 'DigitalDisplay', monospace !important;
+  box-shadow: inset 0 0 5px rgba(255, 204, 0, 0.3) !important;
+  background-image: none !important;
+}
+
+body.vcr-mode #filter-content select:focus,
+body.vcr-mode #filter-content input:focus {
+  outline: 2px solid #ffcc00 !important;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.5), inset 0 0 5px rgba(255, 204, 0, 0.3) !important;
+  background: #000 !important;
+}
+
+body.vcr-mode .year-display {
+  color: #ffcc00;
+  font-family: 'DigitalDisplay', monospace;
+  text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+}
+
+body.vcr-mode .filter-buttons {
+  border-top: 2px solid #ffcc00;
+  padding-top: 15px;
+  margin-top: 20px;
+}
+
+body.vcr-mode .overlay-btn {
+  background: linear-gradient(45deg, #ffcc00, #ffaa00);
+  color: #000;
+  border: 1px solid #ffcc00;
+  font-family: 'DigitalDisplay', monospace;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+body.vcr-mode .overlay-btn:hover {
+  background: linear-gradient(45deg, #ffdd00, #ffcc00);
+  box-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
+}
+
+body.vcr-mode .year-display {
+  color: #ffcc00;
+  font-family: 'DigitalDisplay', monospace;
+  text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+}
+
+body.vcr-mode .year-slider::-webkit-slider-thumb {
+  background: #ffcc00;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+}
+
+body.vcr-mode .year-slider::-moz-range-thumb {
+  background: #ffcc00;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+}
+
+/* ---------------- Responsive Design ---------------- */
+
+@media (max-width: 768px) {
+  #info-title {
+    font-size: 24px;
+  }
+  
+  #info-meta {
+    font-size: 18px;
+  }
+  
+  #info-description {
+    font-size: 16px;
+  }
+  
+  .floating-buttons {
+    bottom: 16px;
+    gap: 8px;
+  }
+  
+  .floating-buttons button,
+  .floating-buttons > #save-button-wrapper {
+    height: 32px;
+    width: 32px;
+  }
+  
+  /* Mobile trailer optimizations */
+  .player-wrapper {
+    max-width: 95vw;
+    margin: 0 2.5vw;
+  }
+  
+  .overlay-buttons {
+    gap: 8px;
+    margin-top: 15px;
+  }
+  
+  .overlay-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+    min-height: 44px; /* Touch target size */
+  }
+  
+  /* Mobile filter panel */
+  #filter-panel {
+    padding: 12px 16px;
+  }
+  
+  #filter-content {
+    padding: 15px;
+  }
+  
+  .filter-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .filter-item {
+    min-width: 100%;
+  }
+  
+  .year-range-section {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .year-sliders {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .year-slider {
+    width: 200px;
+  }
+  
+  .filter-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .filter-buttons .overlay-btn {
+    min-width: 150px;
+    margin: 5px 0;
+  }
+  
+  #filter-content label {
+    font-size: 14px;
+  }
+  
+  #filter-content input,
+  #filter-content select {
+    padding: 8px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    min-height: 44px;
+  }
+  
+  /* Mobile info panel */
+  #info-panel {
+    height: 80px;
+    padding: 4px 8px;
+  }
+  
+  .info-buttons button,
+  #save-button-wrapper {
+    height: 70px;
+    min-width: 44px;
+  }
+  
+
+}
+
+@media (max-width: 480px) {
+  #info-title {
+    font-size: 20px;
+  }
+  
+  #info-meta {
+    font-size: 16px;
+  }
+  
+  #info-description {
+    font-size: 14px;
+  }
+  
+  /* Extra small screen optimizations */
+  .floating-buttons {
+    bottom: 12px;
+    gap: 6px;
+  }
+  
+  .floating-buttons button,
+  .floating-buttons > #save-button-wrapper {
+    height: 28px;
+    width: 28px;
+  }
+  
+  .player-wrapper {
+    max-width: 98vw;
+    margin: 0 1vw;
+  }
+  
+  .overlay-btn {
+    padding: 10px 12px;
+    font-size: 12px;
+    min-height: 40px;
+  }
+  
+  #filter-panel {
+    padding: 8px 12px;
+  }
+  
+  #filter-content {
+    gap: 12px;
+  }
+  
+  #filter-content label {
+    font-size: 12px;
+  }
+  
+  #info-panel {
+    height: 75px;
+    padding: 2px 6px;
+  }
+  
+  .info-buttons button,
+  #save-button-wrapper {
+    height: 65px;
+  }
+  
+
+}
+
+/* Landscape orientation optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .player-wrapper {
+    max-width: 90vw;
+    max-height: 80vh;
+  }
+  
+  .overlay-buttons {
+    margin-top: 10px;
+  }
+  
+  .overlay-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  #info-panel {
+    height: 60px;
+  }
+  
+  .info-buttons button,
+  #save-button-wrapper {
+    height: 50px;
+  }
+}
+
+/* Mobile device optimizations */
+.mobile-device {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mobile-device button,
+.mobile-device [role="button"] {
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-device .floating-buttons {
+  transition: opacity 0.3s ease;
+}
+
+/* Prevent zoom on input focus (iOS) */
+.mobile-device input,
+.mobile-device select {
+  font-size: 16px;
+}
+
+.year-range-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+  gap: 10px;
+}
+
+.year-slider {
+  width: 200px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.year-display {
+  font-size: 16px;
+  color: #ffcc00;
+  font-weight: bold;
+  text-align: center;
+}
+
+.year-min-display,
+.year-max-display {
+  font-weight: bold;
+}
+
+.year-min-display {
+  margin-right: 5px;
+}
+
+.year-max-display {
+  margin-left: 5px;
+}
+
+/* Improve slider appearance */
+.year-slider::-webkit-slider-thumb {
+  background: #ffcc00;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.year-slider::-moz-range-thumb {
+  background: #ffcc00;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.year-slider::-webkit-slider-track {
+  background: #333;
+  border-radius: 5px;
+}
+
+.year-slider::-moz-range-track {
+  background: #333;
+  border-radius: 5px;
+}
+
+.clear-filters-btn {
+  background-color: #ff3b3b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.clear-filters-btn:hover {
+  background-color: #cc2929;
+}
+</style>
+</head>
+<body>
+  <div id="movie-container">
+    <div id="poster-wrapper">
+      <div id="poster-border">
+        <img alt="" draggable="false" id="movie-poster" />
+      </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div id="info-panel">
+      <div id="info-content">
+        
+        <!-- Floating Info Panel Buttons -->
+        <div class="info-buttons">
+          <button id="tmdb-button" aria-label="View TMDB information">
+            <img src="tmdb.png" alt="TMDB" />
+          </button>
+          <div id="save-button-wrapper" role="button" aria-label="Save movie poster">
+            <img id="save-button" src="record.png" alt="Save" />
+            <svg id="save-timer-ring" viewBox="0 0 80 80">
+              <circle r="30" cx="40" cy="40" />
+            </svg>
+          </div>
+          <button id="trailer-button" aria-label="Play trailer">
+            <img src="play.png" alt="Play" />
+          </button>
+          <button id="genre-button" aria-label="Change genre">
+            <img src="shuffle.png" alt="Shuffle" />
+          </button>
+          <button id="next-button" aria-label="Next movie">
+            <img src="next.png" alt="Next" />
+          </button>
+        </div>
+
+        <div id="info-genre" style="display:none;"></div>
+        <div id="movie-type"></div>
+        <div id="movie-runtime"></div>
+      </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div id="filter-panel" class="hidden">
+      <div id="filter-content">
+        <!-- Line 1: Year Range -->
+        <div class="filter-row">
+          <div class="year-range-section">
+            <span class="filter-label">Year Range:</span>
+            <div class="year-sliders">
+              <input type="range" id="year-min" min="1900" max="2025" value="1900" step="1" class="year-slider">
+              <input type="range" id="year-max" min="1900" max="2025" value="2025" step="1" class="year-slider">
+            </div>
+            <div class="year-display">
+              <span id="year-min-display">1900</span> - <span id="year-max-display">2025</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Line 2: Presets, Genre, Type, Country -->
+        <div class="filter-row">
+          <div class="filter-item">
+            <label>Presets:
+              <select id="preset-select">
+                <option value="">Custom</option>
+                <option value="usa-80s">🇺🇸 USA 1980-1989</option>
+                <option value="usa-90s">🇺🇸 USA 1990-1999</option>
+                <option value="usa-80s-90s">🇺🇸 USA 1980-1999</option>
+                <option value="uk-80s">🇬🇧 UK 1980-1989</option>
+                <option value="uk-90s">🇬🇧 UK 1990-1999</option>
+                <option value="japan-80s">🇯🇵 Japan 1980-1989</option>
+                <option value="japan-90s">🇯🇵 Japan 1990-1999</option>
+                <option value="classic-50s">🎬 Classic 1950-1959</option>
+                <option value="classic-60s">🎬 Classic 1960-1969</option>
+                <option value="modern-2010s">🎬 Modern 2010-2019</option>
+                <option value="modern-2020s">🎬 Modern 2020-2025</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="filter-item">
+            <label>Genre: 
+              <select id="genre-select"></select>
+            </label>
+          </div>
+
+          <div class="filter-item">
+            <label>Type: 
+              <select id="type-select">
+                <option value="all">All</option>
+                <option value="movie">Movie</option>
+                <option value="tv">TV</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="filter-item">
+            <label>Country: 
+              <select id="country-select">
+                <option value="">Any</option>
+                <option value="US">🇺🇸</option>
+                <option value="GB">🇬🇧</option>
+                <option value="FR">🇫🇷</option>
+                <option value="JP">🇯🇵</option>
+                <option value="IT">🇮🇹</option>
+                <option value="CA">🇨🇦</option>
+                <option value="CN">🇨🇳</option>
+                <option value="DE">🇩🇪</option>
+                <option value="IN">🇮🇳</option>
+                <option value="ES">🇪🇸</option>
+                <option value="BR">🇧🇷</option>
+                <option value="IE">🇮🇪</option>
+                <option value="AU">🇦🇺</option>
+                <option value="KR">🇰🇷</option>
+                <option value="MX">🇲🇽</option>
+                <option value="BE">🇧🇪</option>
+                <option value="TR">🇹🇷</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <!-- Line 3: Trailer, Rating, Additional Filters -->
+        <div class="filter-row">
+          <div class="filter-item">
+            <label>Trailer: 
+              <select id="trailer-select">
+                <option value="any">Any</option>
+                <option value="required">With Trailer Only</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="filter-item">
+            <label>Min Rating: 
+              <input type="range" id="rating-range" min="0" max="10" step="0.1" value="0">
+              <span id="rating-display">0</span>
+            </label>
+          </div>
+
+          <div class="filter-item">
+            <label>Sort By: 
+              <select id="sort-select">
+                <option value="popularity.desc">Popularity</option>
+                <option value="vote_average.desc">Rating</option>
+                <option value="release_date.desc">Newest</option>
+                <option value="release_date.asc">Oldest</option>
+                <option value="title.asc">Title A-Z</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        
+        <div class="filter-buttons">
+          <button id="filter-summary-btn" class="overlay-btn">Show Filters</button>
+          <button id="theme-button" class="overlay-btn">🎬 VCR Mode</button>
+          <button id="clear-filters-btn" class="overlay-btn">Clear All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trailer Overlay -->
+  <div id="trailer-overlay">
+    <div class="player-wrapper">
+      <div id="player"></div>
+      <div id="popout-overlay-button" class="overlay-float">
+        <button onclick="popoutTrailer()" class="overlay-btn">Pop Out</button>
+      </div>
+    </div>
+    
+    <div id="overlay-info">
+      <div style="font-size:60px; line-height:0.9; color:#fff; font-family:'Credits', sans-serif; text-transform: uppercase;">
+        <span style="font-size:60px;"><span id="overlay-title">TITLE</span></span>
+        <span style="font-size:55px;">(<span id="overlay-year">YEAR</span>)</span>
+      </div>
+
+      <div style="font-size:34px; color:#d4d4d4; font-family:'Credits', sans-serif; text-transform: uppercase; line-height:1;">
+        <div id="overlay-cast">CAST</div>
+        <div>
+          <span style="text-transform:none;">k</span> <span id="overlay-director">DIRECTOR</span> |
+          <span style="text-transform:none;">j</span> <span id="overlay-studio">STUDIO</span> |
+          <span id="overlay-flag">🌍</span> |
+          <a id="overlay-tmdb" href="#" target="_blank" class="tmdb-link">TMDB</a>
+        </div>
+      </div>
+
+      <div id="overlay-meta" style="font-size:26px; font-family:'DigitalDisplay', monospace; color:#ffcc00; letter-spacing:1px;">
+        META
+      </div>
+
+      <div id="overlay-description" style="font-size:20px; color:#dce4e8; font-family:'Bubble', sans-serif; line-height:1.2; margin-top:4px;">
+        DESCRIPTION
+      </div>
+    </div>
+    
+    <div class="overlay-buttons">
+      <button id="overlay-next" onclick="nextTrailer()" class="overlay-btn">Next</button>
+      <button id="overlay-auto-toggle" onclick="toggleAutoTrailer()" class="overlay-btn">Auto: OFF</button>
+      <button onclick="document.getElementById('genre-button').click()" class="overlay-btn">Genre</button>
+      <button onclick="window.open(currentTMDBUrl, '_blank')" class="overlay-btn">TMDB</button>
+      <button onclick="document.getElementById('save-button').click()" class="overlay-btn">Save</button>
+      <button onclick="closeTrailer()" class="overlay-btn">Close</button>
+    </div>
+  </div>
+
+  <!-- Error Messages -->
+  <div id="error-message" class="error-message" style="display: none;"></div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script type="module">
+    // Configuration - Move to environment variables in production
+    const CONFIG = {
+      TMDB_API_KEY: 'e8d804d1f104509d3c1c5b1166485ae6', // Your actual TMDB API key
+      FIREBASE_CONFIG: {
+        apiKey: "AIzaSyACJHIOV-OAC8HYdAF8byCBseK7Hrqkdfk",
+        authDomain: "vcra-44ef7.firebaseapp.com",
+        projectId: "vcra-44ef7",
+        storageBucket: "vcra-44ef7.appspot.com",
+        messagingSenderId: "7232539586",
+        appId: "1:27232539586:web:6c01859c308b6a6ec37c5b"
+      }
+    };
+
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Initialize Firebase
+    const app = initializeApp(CONFIG.FIREBASE_CONFIG);
+    const db = getFirestore(app);
+
+    // Application State Management
+    class AppState {
+      constructor() {
+        this.genres = [
+          { name: "Sci-Fi", movie: "878", tv: "10765" },
+          { name: "Adventure", movie: "12", tv: "10759" },
+          { name: "Comedy", movie: "35", tv: "35" },
+          { name: "Documentary", movie: "99", tv: "99" },
+          { name: "Animation", movie: "16", tv: "16" },
+          { name: "Romance", movie: "10749", tv: "18" },
+          { name: "Crime", movie: "80", tv: "80" },
+          { name: "Mystery", movie: "9648", tv: "9648" },
+          { name: "Action", movie: "28", tv: "10759" },
+          { name: "Drama", movie: "18", tv: "18" },
+          { name: "Thriller", movie: "53", tv: "53" },
+          { name: "Horror", movie: "27", tv: "27" },
+          { name: "Fantasy", movie: "14", tv: "10765" },
+          { name: "War", movie: "10752", tv: "10768" },
+          { name: "Western", movie: "37", tv: "37" },
+          { name: "Family", movie: "10751", tv: "10751" },
+          { name: "History", movie: "36", tv: "36" },
+          { name: "Music", movie: "10402", tv: "10402" },
+          { name: "Sport", movie: "10751", tv: "10751" }
+        ];
+        
+        this.currentGenre = this.genres.find(g => g.name === "Comedy") || this.genres[0];
+        this.currentTMDBUrl = "";
+        this.currentTrailerUrl = "";
+        this.isMovie = true;
+        this.trailerPlaying = false;
+        this.trailerPaused = false;
+        this.isTrailerAdvancing = false;
+        this.autoTrailerMode = false;
+        this.fetchHistory = [];
+        this.historyIndex = 0;
+        this.swipeState = "poster";
+        this.failedFetchCount = 0;
+        this.MAX_FAILED_FETCHES = 5;
+        
+        // Timers
+        this.panelTimer = null;
+        this.panelFadeTimer = null;
+        this.fetchTimer = null;
+        this.fadeTimer = null;
+        this.overlayFadeTimer = null;
+        this.currentPollInterval = null;
+        this.filterAutoCloseTimer = null;
+        this.longPressTimer = null;
+        
+        // YouTube
+        this.trailerPlayer = null;
+        this.youtubeReady = false;
+        this.trailerLoopFirst = true;
+        this.lastTrailerId = null;
+        this.overlayInfo = null;
+        this.lastMouseMoveTime = 0;
+        this.swipeCooldown = false;
+        this.tmdbClickBound = false;
+        this.isFetching = false;
+      }
+
+      // Utility methods
+      clearAllTimers() {
+        const timers = [
+          this.panelTimer, this.panelFadeTimer, this.fetchTimer, 
+          this.fadeTimer, this.overlayFadeTimer, this.currentPollInterval,
+          this.filterAutoCloseTimer, this.longPressTimer
+        ];
+        
+        timers.forEach(timer => {
+          if (timer) {
+            clearTimeout(timer);
+            clearInterval(timer);
+          }
+        });
+      }
+
+      resetTrailerState() {
+        this.isTrailerAdvancing = false;
+        this.trailerPlaying = false;
+        this.trailerPaused = false;
+        // Don't reset autoTrailerMode here - let it persist
+        this.trailerLoopFirst = true;
+        this.clearAllTimers();
+      }
+    }
+
+    // Error Handling
+    class ErrorHandler {
+      static showError(message, duration = 5000) {
+        const errorEl = document.getElementById('error-message');
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+        
+        setTimeout(() => {
+          errorEl.style.display = 'none';
+        }, duration);
+      }
+
+
+
+      static async handleApiError(error, context = '') {
+        console.error(`API Error in ${context}:`, error);
+        
+        if (error.status === 429) {
+          this.showError('Rate limit exceeded. Please wait a moment.');
+        } else if (error.status >= 500) {
+          this.showError('Server error. Please try again later.');
+        } else if (error.status >= 400) {
+          this.showError('Invalid request. Please check your settings.');
+        } else {
+          this.showError('Network error. Please check your connection.');
+        }
+      }
+    }
+
+    // API Service
+    class TMDBService {
+      constructor(apiKey) {
+        this.apiKey = apiKey;
+        this.baseUrl = 'https://api.themoviedb.org/3';
+      }
+
+      async makeRequest(endpoint, params = {}) {
+        const url = new URL(`${this.baseUrl}${endpoint}`);
+        url.searchParams.set('api_key', this.apiKey);
+        
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            url.searchParams.set(key, value);
+          }
+        });
+
+        try {
+          const response = await fetch(url.toString());
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          return await response.json();
+        } catch (error) {
+          error.status = error.message.includes('HTTP') ? 
+            parseInt(error.message.split(' ')[1]) : 0;
+          throw error;
+        }
+      }
+
+      async getPageCount(type, country, genreId = null, yearMin = null, yearMax = null, rating = null) {
+        try {
+          const params = {
+            page: 1
+          };
+          
+          if (country) params.with_origin_country = country;
+          if (genreId) params.with_genres = genreId;
+          if (rating > 0) params['vote_average.gte'] = rating;
+          
+          if (yearMin && yearMax && yearMin !== 1900 && yearMax !== 2025) {
+            if (type === "movie") {
+              params['primary_release_date.gte'] = `${yearMin}-01-01`;
+              params['primary_release_date.lte'] = `${yearMax}-12-31`;
+            } else {
+              params['first_air_date.gte'] = `${yearMin}-01-01`;
+              params['first_air_date.lte'] = `${yearMax}-12-31`;
+            }
+          }
+
+          const data = await this.makeRequest(`/discover/${type}`, params);
+          const totalPages = data.total_pages || 1;
+          const totalResults = data.total_results || 0;
+          
+          console.log(`📊 Genre analysis: ${totalResults} results, ${totalPages} pages available`);
+          
+          // Adjust page range based on results
+          if (totalResults < 100) {
+            console.warn(`⚠️ Low results (${totalResults}) - expanding search parameters`);
+            return Math.min(totalPages, 500); // Search more pages for low-result genres
+          } else if (totalResults > 10000) {
+            console.log(`✅ High results (${totalResults}) - using standard page range`);
+            return Math.min(totalPages, 80); // Standard range for popular genres
+          } else {
+            return Math.min(totalPages, 200); // Balanced range
+          }
+        } catch (error) {
+          console.warn('Failed to get page count:', error);
+          return 80; // Fallback
+        }
+      }
+
+      async getRandomTitle(requireTrailer = false, overrideType = null, overrideGenreId = null) {
+        try {
+          const selectedGenreName = document.getElementById("genre-select")?.value;
+          const selectedCountry = document.getElementById("country-select")?.value;
+          const selectedType = document.getElementById("type-select")?.value || "movie";
+          const selectedRating = parseFloat(document.getElementById("rating-range")?.value || 0);
+          const trailerRequired = requireTrailer || document.getElementById("trailer-select")?.value === "required";
+          const selectedSort = document.getElementById("sort-select")?.value || "popularity.desc";
+
+          const type = selectedType === "all" ? (Math.random() < 0.5 ? "movie" : "tv") : selectedType;
+          appState.isMovie = type === "movie";
+
+          const genreObj = appState.genres.find(g => g.name === selectedGenreName);
+          const selectedGenreId = type === "tv" ? genreObj?.tv : genreObj?.movie;
+
+          const yearMinInput = parseInt(document.getElementById("year-min")?.value || "1900");
+          const yearMaxInput = parseInt(document.getElementById("year-max")?.value || "2025");
+          const defaultYearMin = 1900;
+          const defaultYearMax = 2025;
+          const useYearFilter = yearMinInput !== defaultYearMin || yearMaxInput !== defaultYearMax;
+
+          // Get dynamic page count based on current filters
+          const pageCount = await this.getPageCount(
+            type, 
+            selectedCountry, 
+            selectedGenreId,
+            yearMinInput,
+            yearMaxInput,
+            selectedRating
+          );
+          
+          let randomPage = Math.floor(Math.random() * pageCount) + 1;
+
+          const params = {
+            language: 'en-US',
+            sort_by: selectedSort,
+            page: randomPage
+          };
+
+          if (selectedGenreName !== "all" && selectedGenreId) {
+            params.with_genres = selectedGenreId;
+          }
+          if (selectedRating > 0) {
+            params['vote_average.gte'] = selectedRating;
+          }
+          if (useYearFilter && yearMinInput <= yearMaxInput) {
+            if (appState.isMovie) {
+              params['primary_release_date.gte'] = `${yearMinInput}-01-01`;
+              params['primary_release_date.lte'] = `${yearMaxInput}-12-31`;
+            } else {
+              params['first_air_date.gte'] = `${yearMinInput}-01-01`;
+              params['first_air_date.lte'] = `${yearMaxInput}-12-31`;
+            }
+          }
+          if (selectedCountry) {
+            params.with_origin_country = selectedCountry;
+          }
+
+          const data = await this.makeRequest(`/discover/${type}`, params);
+          
+          if (!data.results || data.results.length === 0) {
+            appState.failedFetchCount++;
+            console.warn(`No results found (attempt ${appState.failedFetchCount}/${appState.MAX_FAILED_FETCHES})`);
+            
+            if (appState.failedFetchCount >= appState.MAX_FAILED_FETCHES) {
+              console.warn("🔄 Too many failed attempts - trying with relaxed filters");
+              
+              // Try with relaxed filters before giving up
+              const relaxedParams = { ...params };
+              delete relaxedParams.with_genres;
+              delete relaxedParams.with_origin_country;
+              
+              const relaxedData = await this.makeRequest(`/discover/${type}`, relaxedParams);
+              
+              if (relaxedData.results && relaxedData.results.length > 0) {
+                console.log("✅ Found results with relaxed filters");
+                const item = relaxedData.results[Math.floor(Math.random() * relaxedData.results.length)];
+                const detailData = await this.makeRequest(`/${type}/${item.id}`, {
+                  language: 'en-US',
+                  append_to_response: 'credits,videos'
+                });
+                appState.failedFetchCount = 0;
+                return this.processMovieData(item, detailData, type);
+              } else {
+                this.resetFilters();
+                ErrorHandler.showError('No matches found. Filters have been reset.');
+              }
+            }
+            return false;
+          }
+
+          const item = data.results[Math.floor(Math.random() * data.results.length)];
+          appState.failedFetchCount = 0;
+
+          if (!item.poster_path) {
+            console.warn("Missing poster — retrying...");
+            return this.getRandomTitle(requireTrailer);
+          }
+
+          // Get detailed information
+          const detailData = await this.makeRequest(`/${type}/${item.id}`, {
+            language: 'en-US',
+            append_to_response: 'credits,videos'
+          });
+
+          const processedData = this.processMovieData(item, detailData, type);
+          
+          // If trailer is required but not found, skip this item
+          if (trailerRequired && !processedData.trailerUrl) {
+            return this.getRandomTitle(requireTrailer, overrideType, overrideGenreId);
+          }
+
+          return processedData;
+          
+        } catch (error) {
+          await ErrorHandler.handleApiError(error, 'getRandomTitle');
+          return false;
+        }
+      }
+
+      processMovieData(item, detailData, type) {
+        const posterPath = item.poster_path ? 
+          `https://image.tmdb.org/t/p/w780${item.poster_path}` : 
+          "https://via.placeholder.com/500x750?text=No+Image";
+        
+        const title = item.title || item.name || "Untitled";
+        const overview = item.overview || "No description available.";
+        const rating = item.vote_average ? `${Math.round(item.vote_average * 10)}%` : "--";
+        const releaseDate = item.release_date || item.first_air_date || "";
+        const year = releaseDate ? releaseDate.substring(0, 4) : "";
+
+        const director = detailData.credits?.crew?.find(c => c.job === "Director")?.name || "Unknown";
+        const castList = detailData.credits?.cast?.slice(0, 5).map(c => c.name).join(", ") || "Unknown";
+        const studio = detailData.production_companies?.[0]?.name || "Unknown";
+        const budget = appState.isMovie && detailData.budget ? 
+          `$${(detailData.budget / 1_000_000).toFixed(1)}M` : "--";
+        
+        const trailer = detailData.videos?.results?.find(v => 
+          v.type === "Trailer" && v.site === "YouTube");
+        
+        const currentTrailerUrl = trailer ? 
+          `https://www.youtube.com/watch?v=${trailer.key}` : null;
+        
+        const runtime = detailData.runtime || 
+          (Array.isArray(detailData.episode_run_time) ? detailData.episode_run_time[0] : "--");
+        const episodeCount = detailData.number_of_episodes ?? "--";
+        const originCountry = detailData.origin_country?.[0] || 
+          detailData.production_countries?.[0]?.iso_3166_1 || "";
+
+        const metaText = appState.isMovie
+          ? `⭐️ ${rating} • 🍿 • ${runtime} mins • ${getFlagEmoji(originCountry)}`
+          : `⭐️ ${rating} • 📺 • ${episodeCount} eps × ${runtime} mins • ${getFlagEmoji(originCountry)}`;
+
+        const tmdbUrl = `https://www.themoviedb.org/${type}/${item.id}`;
+
+        // Save to Firebase
+        const docRef = doc(db, "films", String(item.id));
+        setDoc(docRef, {
+          id: item.id,
+          title,
+          overview,
+          year,
+          releaseDate,
+          runtime: runtime ?? "--",
+          episodeCount: episodeCount ?? "--",
+          rating,
+          popularity: item.popularity,
+          originCountry,
+          trailerUrl: currentTrailerUrl,
+          trailerKey: trailer ? trailer.key : null,
+          genre: appState.currentGenre.name,
+          type,
+          tmdbUrl,
+          director: director ?? "Unknown",
+          castList: castList ?? "Unknown",
+          studio: studio ?? "Unknown",
+          budget: budget ?? "--",
+          posterUrl: posterPath,
+          metaText,
+          timestamp: Date.now(),
+          timestampReadable: new Date().toISOString(),
+          cachedBy: "public"
+        }).catch(error => {
+          console.warn("Failed to save to Firebase:", error);
+        });
+
+        return {
+          id: item.id,
+          title,
+          overview,
+          year,
+          releaseDate,
+          runtime: runtime ?? "--",
+          episodeCount: episodeCount ?? "--",
+          rating,
+          popularity: item.popularity,
+          originCountry,
+          trailerUrl: currentTrailerUrl,
+          trailerKey: trailer ? trailer.key : null,
+          genre: appState.currentGenre.name,
+          type,
+          tmdbUrl,
+          director: director ?? "Unknown",
+          castList: castList ?? "Unknown",
+          studio: studio ?? "Unknown",
+          budget: budget ?? "--",
+          posterPath,
+          metaText
+        };
+      }
+
+      async validateGenre(genreName, type) {
+        try {
+          const genreObj = this.genres.find(g => g.name === genreName);
+          if (!genreObj) return false;
+          
+          const genreId = type === "tv" ? genreObj.tv : genreObj.movie;
+          if (!genreId) return false;
+          
+          // Test the genre with a simple search
+          const testData = await this.makeRequest(`/discover/${type}`, {
+            with_genres: genreId,
+            page: 1
+          });
+          
+          const hasResults = testData.total_results > 0;
+          console.log(`🔍 Genre validation: ${genreName} (${type}) - ${hasResults ? '✅ Valid' : '❌ No results'}`);
+          
+          return hasResults;
+        } catch (error) {
+          console.warn(`⚠️ Genre validation failed for ${genreName} (${type}):`, error);
+          return false;
+        }
+      }
+
+      resetFilters() {
+        document.getElementById("genre-select").value = "all";
+        document.getElementById("country-select").value = "";
+        document.getElementById("type-select").value = "all";
+        document.getElementById("rating-range").value = 0;
+        document.getElementById("year-min").value = 1900;
+        document.getElementById("year-max").value = 2025;
+        document.getElementById("preset-select").value = "";
+        document.getElementById("trailer-select").value = "any";
+        document.getElementById("sort-select").value = "popularity.desc";
+        appState.failedFetchCount = 0;
+        document.getElementById("year-min-display").textContent = "1900";
+        document.getElementById("year-max-display").textContent = "2025";
+        document.getElementById("rating-display").textContent = "0";
+        updateYearLabel();
+      }
+    }
+
+    // Utility Functions
+    function getFlagEmoji(countryCode) {
+      if (!countryCode) return "";
+      return countryCode
+        .toUpperCase()
+        .replace(/./g, char => String.fromCodePoint(127397 + char.charCodeAt()));
+    }
+
+    function extractYouTubeId(url) {
+      try {
+        const urlObj = new URL(url);
+        return urlObj.searchParams.get("v") || urlObj.pathname.split("/").pop();
+      } catch {
+        return null;
+      }
+    }
+
+    // Initialize global state and services
+    const appState = new AppState();
+    const tmdbService = new TMDBService(CONFIG.TMDB_API_KEY);
+
+    // Make functions globally available
+    window.appState = appState;
+    window.tmdbService = tmdbService;
+    window.getFlagEmoji = getFlagEmoji;
+    window.extractYouTubeId = extractYouTubeId;
+    
+    // YouTube player variables are available globally
+    // Access them via window.trailerPlayer and window.youtubeReady
+
+    // Firebase Export Functions - defined globally
+    window.convertToCSV = function(data) {
+      if (!data || data.length === 0) return "";
+      
+      const headers = Object.keys(data[0]);
+      const csvRows = [headers.join(',')];
+      
+      for (const row of data) {
+        const values = headers.map(header => {
+          const value = row[header];
+          const escaped = String(value).replace(/"/g, '""');
+          return `"${escaped}"`;
+        });
+        csvRows.push(values.join(','));
+      }
+      
+      return csvRows.join('\n');
+    };
+
+    window.exportFirestoreAsCSV = async function() {
+      try {
+        console.log("📊 Exporting Firebase data to CSV...");
+        const snapshot = await getDocs(collection(db, "films"));
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        const csv = window.convertToCSV(data);
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `firebase-saved-films-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        console.log(`✅ Exported ${data.length} records to CSV`);
+      } catch (error) {
+        console.error("❌ Export failed:", error);
+        if (window.ErrorHandler) {
+          window.ErrorHandler.showError("Export failed. Check console for details.");
+        } else {
+          console.error("Export failed:", error);
+        }
+      }
+    };
+
+    // Continue with the rest of your existing functions, but using the new structure...
+    // (I'll continue with the key functions that need the most attention)
+
+    // ... existing code ...
+  </script>
+  
+  <script>
+    // YouTube Player Setup
+    let trailerPlayer = null;
+    let youtubeReady = false;
+
+    // Player state change handler - defined globally
+    window.onPlayerStateChange = function(event) {
+      console.log("🎬 ===== PLAYER STATE EVENT RECEIVED =====");
+      console.log("🎬 Event data:", event.data);
+      console.log("🎬 Event target:", event.target);
+      console.log("🎬 Auto-trailer mode:", window.isAutoTrailerMode);
+      console.log("🎬 YouTube Player State:", getStateName ? getStateName(event.data) : event.data);
+      
+      if (event.data === YT.PlayerState.ENDED) {
+        console.log("🔚 Trailer ended");
+        
+        if (window.isAutoTrailerMode) {
+          console.log("🔁 Auto mode - finding next trailer");
+          setTimeout(() => {
+            if (window.findTrailerAndPlay) {
+              window.findTrailerAndPlay();
+            }
+          }, 1000);
+        } else {
+          console.log("🎬 Single mode - trailer ended, staying open");
+        }
+      }
+      
+      if (event.data === YT.PlayerState.UNSTARTED) {
+        console.log("⚠️ Video unstarted - possible region/age restriction");
+        if (window.isAutoTrailerMode) {
+          console.log("🔄 Auto mode: Skipping restricted video");
+          setTimeout(() => {
+            if (window.findTrailerAndPlay) {
+              window.findTrailerAndPlay();
+            }
+          }, 2000);
+        }
+      }
+      
+      if (event.data === -1) {
+        console.log("❌ Video error detected");
+        if (window.isAutoTrailerMode) {
+          console.log("🔄 Auto mode: Skipping error video");
+          setTimeout(() => {
+            if (window.findTrailerAndPlay) {
+              window.findTrailerAndPlay();
+            }
+          }, 2000);
+        }
+      }
+    };
+
+    window.onYouTubeIframeAPIReady = function () {
+      trailerPlayer = new YT.Player("player", {
+        height: "390",
+        width: "640",
+        videoId: "",
+        playerVars: {
+          enablejsapi: 1,
+          controls: 1,
+          modestbranding: 1,
+          rel: 0,
+          showinfo: 0,
+          origin: window.location.origin
+        },
+        events: {
+          onReady: () => {
+            youtubeReady = true;
+            console.log("✅ YouTube Player is fully ready");
+            
+            // Test if events are working
+            setTimeout(() => {
+              console.log("🧪 Testing player event system...");
+              console.log("🧪 Player object:", trailerPlayer);
+              console.log("🧪 Player ready state:", trailerPlayer.getPlayerState());
+            }, 1000);
+          },
+          onStateChange: window.onPlayerStateChange
+        }
+      });
+
+      console.log("✅ YouTube Player ready");
+    };
+
+    // Poster loading
+    const poster = document.getElementById('movie-poster');
+    if (poster.complete) {
+      poster.classList.add('loaded');
+    } else {
+      poster.addEventListener('load', () => {
+        poster.classList.add('loaded');
+      });
+    }
+  </script>
+
+  <script type="module">
+    // Complete the missing functionality with improved structure
+    
+    // Panel Management Functions
+    function closeAllPanels() {
+      document.getElementById("filter-panel").classList.remove("active");
+      document.getElementById("info-panel").classList.remove("expanded");
+      appState.swipeState = "poster";
+    }
+
+    function togglePanel(forceExpand = null) {
+      const panel = document.getElementById('info-panel');
+      const shouldExpand = forceExpand !== null
+        ? forceExpand
+        : !panel.classList.contains('expanded');
+
+      clearTimeout(appState.panelFadeTimer);
+      clearTimeout(appState.panelTimer);
+
+      if (shouldExpand) {
+        panel.classList.remove('hidden');
+        panel.classList.add('expanded');
+        appState.swipeState = "info";
+
+        // Auto-collapse after 15s
+        appState.panelTimer = setTimeout(() => {
+          panel.classList.remove("expanded");
+          resetPanelFade();
+          appState.swipeState = "poster";
+        }, 15000);
+      } else {
+        panel.classList.remove("expanded");
+        resetPanelFade();
+        appState.swipeState = "poster";
+      }
+    }
+
+    function resetPanelFade() {
+      const panel = document.getElementById('info-panel');
+      clearTimeout(appState.panelFadeTimer);
+
+      if (panel.classList.contains("expanded")) {
+        appState.panelFadeTimer = setTimeout(() => {
+          panel.classList.remove("expanded");
+          resetPanelFade();
+        }, 15000);
+      } else {
+        appState.panelFadeTimer = setTimeout(() => {
+          panel.classList.add("hidden");
+        }, 5000);
+      }
+    }
+
+    // Helper function to get state name
+    function getStateName(state) {
+      switch(state) {
+        case -1: return "UNSTARTED";
+        case 0: return "ENDED";
+        case 1: return "PLAYING";
+        case 2: return "PAUSED";
+        case 3: return "BUFFERING";
+        case 5: return "CUED";
+        default: return "UNKNOWN";
+      }
+    }
+    
+    // Make getStateName globally available
+    window.getStateName = getStateName;
+
+    // Player state change handler is now defined globally in the YouTube script section
+
+    // Proper trailer player function using YouTube API
+    function playTrailer(url) {
+      console.log("🎥 Playing trailer:", url);
+      
+      if (!url) {
+        console.error("❌ No URL provided");
+        return;
+      }
+
+      const videoId = extractYouTubeId(url);
+      if (!videoId) {
+        console.error("❌ Could not extract video ID from URL:", url);
+        return;
+      }
+
+      console.log("🎥 Loading video ID:", videoId);
+      
+      // Show trailer overlay
+      const overlay = document.getElementById('trailer-overlay');
+      
+      if (!overlay) {
+        console.error("❌ Trailer overlay not found");
+        return;
+      }
+      
+      // Show the overlay
+      overlay.classList.add('active');
+      overlay.style.visibility = 'visible';
+      overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
+      
+      // Always use iframe method for now (more reliable)
+      console.log("🎥 Using iframe player method");
+      createIframePlayer(videoId);
+      
+      // Auto-advance is now handled by onPlayerStateChange event
+      // when the video actually ends
+    }
+    
+    // Helper function to create iframe player
+    function createIframePlayer(videoId) {
+      const playerDiv = document.getElementById('player');
+      if (playerDiv) {
+        const iframe = document.createElement('iframe');
+        iframe.width = '100%';
+        iframe.height = '100%';
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+        iframe.frameBorder = '0';
+        iframe.allowFullscreen = true;
+        
+        playerDiv.innerHTML = '';
+        playerDiv.appendChild(iframe);
+        console.log("🎥 Iframe player created for video:", videoId);
+        
+        // Add fallback timeout for iframe players (since they don't trigger API events)
+        if (window.isAutoTrailerMode) {
+          console.log("🎥 Setting fallback timeout for iframe player (15 seconds)");
+          window.fallbackTimeout = setTimeout(() => {
+            if (window.isAutoTrailerMode) {
+              console.log("🎥 Fallback timeout triggered - advancing to next trailer");
+              if (window.findTrailerAndPlay) {
+                window.findTrailerAndPlay();
+              }
+            }
+          }, 15000); // 15 seconds fallback (reduced from 30)
+        }
+      }
+    }
+
+    // Simple close trailer function
+    function closeTrailer() {
+      console.log("❎ Closing trailer player");
+      
+      // Clear auto-advance timer
+      if (window.autoAdvanceTimer) {
+        clearTimeout(window.autoAdvanceTimer);
+        window.autoAdvanceTimer = null;
+        console.log("🛑 Cleared auto-advance timer");
+      }
+      
+      // Clear fallback timeout
+      if (window.fallbackTimeout) {
+        clearTimeout(window.fallbackTimeout);
+        window.fallbackTimeout = null;
+        console.log("🛑 Cleared fallback timeout");
+      }
+      
+      // Clear the player div
+      const playerDiv = document.getElementById('player');
+      if (playerDiv) {
+        playerDiv.innerHTML = '';
+      }
+      
+      // Hide overlay
+      const overlay = document.getElementById('trailer-overlay');
+      overlay.classList.remove('active');
+      overlay.style.opacity = '0';
+      overlay.style.visibility = 'hidden';
+      overlay.style.pointerEvents = 'none';
+      
+      // Restart auto-fetch if not in auto-trailer mode
+      if (!window.isAutoTrailerMode) {
+        console.log("🔄 Restarting auto-fetch after trailer close");
+        setTimeout(() => {
+          startAutoFetch();
+        }, 20000);
+      } else {
+        console.log("⏹️ Auto-trailer mode active — not restarting auto-fetch");
+      }
+    }
+
+    // UI Application Functions
+    function applyFilmToUI(data) {
+      console.log("📦 Current history count:", appState.fetchHistory.length);
+      appState.swipeState = "poster";
+
+      // Store history (unless we're recalling one)
+      if (!window.applyingFromHistory) {
+        appState.fetchHistory.unshift(data);
+        if (appState.fetchHistory.length > 5) appState.fetchHistory.pop();
+        appState.historyIndex = 0;
+        document.getElementById("tmdb-button").disabled = appState.fetchHistory.length === 0;
+      }
+
+      // Set core UI elements
+      document.getElementById("movie-poster").src = data.posterPath;
+      document.getElementById("overlay-title").textContent = data.title;
+      document.getElementById("overlay-year").textContent = data.year;
+      document.getElementById("overlay-cast").textContent = data.castList.toUpperCase();
+      document.getElementById("overlay-director").textContent = data.director.toUpperCase();
+      document.getElementById("overlay-studio").textContent = data.studio.toUpperCase();
+      document.getElementById("overlay-flag").textContent = getFlagEmoji(data.originCountry);
+      document.getElementById("overlay-tmdb").href = data.tmdbUrl;
+      document.getElementById("overlay-description").textContent = data.overview;
+
+      document.getElementById("overlay-meta").textContent = appState.isMovie
+        ? `${data.rating} • ${data.runtime} min • ${data.genre} • ${data.budget}`
+        : `${data.rating} • ${data.episodeCount ?? "--"} eps × ${data.runtime ?? "--"} min • ${data.genre} • ${data.budget}`;
+
+      // Update genre name
+      const genreNameEl = document.getElementById("genre-name");
+      if (genreNameEl) genreNameEl.textContent = data.genre;
+
+      // Update floating TMDB link
+      const tmdbLink = document.getElementById("tmdb-link");
+      if (tmdbLink) {
+        tmdbLink.innerHTML = `| <a href="${data.tmdbUrl}" target="_blank" style="color:#00ccff;">TMDB</a>`;
+      }
+      
+      // Store trailer URL for single trailer mode
+      if (data.trailerUrl) {
+        currentTrailerUrl = data.trailerUrl;
+        appState.currentTrailerUrl = data.trailerUrl; // Also set in appState for compatibility
+        console.log("🎬 Trailer URL stored:", data.trailerUrl);
+      }
+
+      // Refresh info panel
+      document.getElementById("info-crew")?.remove();
+      const genreAnchor = document.getElementById("info-genre");
+      if (genreAnchor) {
+        const extraHTML = `
+          <div id="info-crew" style="margin-top:0px; margin-bottom:1px;">
+            <div style="line-height:0.92; color:#fff; font-family:'Credits', sans-serif; text-transform: uppercase;">
+              <span style="font-size:70px;">${data.title}</span>
+              <span style="font-size:67px;">(${data.year})</span>
+            </div>
+
+            <div style="font-size:40px; color:#d4d4d4; font-family: 'Credits', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-transform: uppercase; line-height:0.95;">
+              <span>${data.castList}</span>
+              <div style="line-height:1;">
+                <span style="text-transform:none;">k</span> <span style="text-transform:uppercase;">${data.director}</span>  
+                <span style="text-transform:none;">  j</span> <span style="text-transform:uppercase;">${data.studio}</span> | 
+                ${getFlagEmoji(data.originCountry)} | 
+                <a href="${data.tmdbUrl}" target="_blank" class="tmdb-link" style="color:#00ccff; text-decoration:none;">TMDB</a>
+              </div>
+            </div>
+
+            <div id="info-description" style="margin-top:1.5px; font-size:20px; line-height:1; color:#dce4e8; font-family:'Bubble', sans-serif;">
+              ${data.overview}
+            </div>
+
+            <div id="info-meta" style="margin-top:1px; font-size:28px; color:#ffcc00; font-family:'DigitalDisplay', monospace; letter-spacing:1px;">
+              ${data.rating} • ${appState.isMovie ? `${data.runtime} min` : `${data.episodeCount ?? "--"} eps × ${data.runtime ?? "--"} min`} • ${data.genre || "No Genre Info"} • ${data.budget}
+            </div>
+          </div>
+        `;
+        genreAnchor.insertAdjacentHTML('afterend', extraHTML);
+      }
+
+      // Handle trailer button status
+      appState.currentTMDBUrl = data.tmdbUrl;
+      appState.currentTrailerUrl = data.trailerUrl;
+
+      const trailerBtn = document.getElementById("trailer-button");
+      const trailerImg = trailerBtn?.querySelector("img");
+
+      if (!data.trailerUrl) {
+        trailerBtn.disabled = true;
+        trailerImg.src = "play-disabled.png";
+        trailerImg.style.opacity = "0.3";
+      } else {
+        trailerBtn.disabled = false;
+        trailerImg.src = "play.png";
+        trailerImg.style.opacity = "0.6";
+        trailerBtn.style.cursor = "pointer";
+      }
+
+      // Bind TMDB recall button
+      const tmdbBtn = document.getElementById("tmdb-button");
+      tmdbBtn.disabled = false;
+      if (!appState.tmdbClickBound) {
+        tmdbBtn.onclick = (e) => {
+          e.stopPropagation();
+          console.log("🖱️ TMDB button clicked");
+          if (appState.fetchHistory.length === 0) return;
+
+          appState.historyIndex = (appState.historyIndex + 1) % appState.fetchHistory.length;
+          const previous = appState.fetchHistory[appState.historyIndex];
+          if (previous) {
+            window.applyingFromHistory = true;
+            applyFilmToUI(previous);
+            window.applyingFromHistory = false;
+          }
+        };
+        appState.tmdbClickBound = true;
+      }
+    }
+
+    // Simple trailer finding function
+    async function findTrailerAndPlay() {
+      console.log("🔍 Finding next trailer...");
+      
+      try {
+        const data = await tmdbService.getRandomTitle(true);
+        
+        if (data && data.trailerUrl?.includes("youtube.com")) {
+          console.log("🎬 Found trailer — playing", data.trailerUrl);
+          
+          // Update UI with film data
+          applyFilmToUI(data);
+          
+          // Store current trailer URL
+          currentTrailerUrl = data.trailerUrl;
+          
+          // Play the trailer in popup
+          playTrailer(data.trailerUrl);
+          
+          // Auto-advance is now handled by onPlayerStateChange event
+          // when the video actually ends
+        } else {
+          console.log("🎬 No trailer found, trying again...");
+          if (window.isAutoTrailerMode) {
+            setTimeout(() => {
+              findTrailerAndPlay();
+            }, 2000);
+          }
+        }
+      } catch (error) {
+        console.error("Error finding trailer:", error);
+        if (window.isAutoTrailerMode) {
+          setTimeout(() => {
+            findTrailerAndPlay();
+          }, 2000);
+        }
+      }
+    }
+
+    // Fetch and Countdown Functions
+    function startFetchCountdown(duration = 60000) {
+      const circle = document.querySelector("#save-timer-ring circle");
+      const totalLength = 2 * Math.PI * 30;
+
+      let startTime = performance.now();
+
+      function animate(time) {
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        circle.style.strokeDashoffset = totalLength * (1 - progress);
+        if (progress < 1) requestAnimationFrame(animate);
+      }
+
+      circle.style.strokeDasharray = totalLength;
+      circle.style.strokeDashoffset = 0;
+
+      requestAnimationFrame(animate);
+    }
+
+    function startAutoFetch() {
+      if (window.isAutoTrailerMode) {
+        console.log("⏹️ Auto trailer mode active — not starting auto fetch loop.");
+        return;
+      }
+
+      if (appState.fetchTimer) {
+        clearTimeout(appState.fetchTimer);
+        appState.fetchTimer = null;
+      }
+
+      fetchWithCountdown(false, true).then(() => {
+        if (!isAutoTrailerMode) {
+          appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+        } else {
+          console.log("🛑 Skipped auto fetch loop restart — autoplay is now active.");
+        }
+      });
+    }
+
+    function fetchWithCountdown(requireTrailer = false, preserveSwipeState = true) {
+      if (window.isAutoTrailerMode) return Promise.resolve(false);
+      if (appState.isFetching) return Promise.resolve(false);
+      appState.isFetching = true;
+
+      return tmdbService.getRandomTitle(requireTrailer).then((data) => {
+        if (data) {
+          applyFilmToUI(data);
+
+          if (!preserveSwipeState && appState.swipeState === "info") {
+            togglePanel(false);
+            appState.swipeState = "poster";
+          }
+
+          startFetchCountdown(60000);
+          appState.isFetching = false;
+          return true;
+        } else {
+          appState.isFetching = false;
+          return false;
+        }
+      }).catch((err) => {
+        console.error("Error in fetch:", err);
+        appState.isFetching = false;
+        return false;
+      });
+    }
+
+    // Utility Functions
+    function toggleMute() {
+      if (!trailerPlayer) return;
+      const muted = trailerPlayer.isMuted();
+      if (muted) {
+        trailerPlayer.unMute();
+        console.log("🔊 Unmuted");
+      } else {
+        trailerPlayer.mute();
+        console.log("🔇 Muted");
+      }
+    }
+
+    function popoutTrailer() {
+      if (appState.currentTrailerUrl) {
+        window.open(appState.currentTrailerUrl, '_blank', 'width=800,height=450');
+      } else {
+        console.warn("��️ No trailer URL to pop out.");
+      }
+    }
+
+    function updateYearLabel() {
+      const yearMin = parseInt(document.getElementById("year-min")?.value || "1900");
+      const yearMax = parseInt(document.getElementById("year-max")?.value || "2025");
+
+      document.getElementById("year-min-display").textContent = yearMin;
+      document.getElementById("year-max-display").textContent = yearMax;
+    }
+
+    function applyPreset(presetValue) {
+      const yearMinSlider = document.getElementById("year-min");
+      const yearMaxSlider = document.getElementById("year-max");
+      const countrySelect = document.getElementById("country-select");
+      const typeSelect = document.getElementById("type-select");
+
+      switch (presetValue) {
+        case "usa-80s":
+          yearMinSlider.value = 1980;
+          yearMaxSlider.value = 1989;
+          countrySelect.value = "US";
+          typeSelect.value = "movie";
+          break;
+        case "usa-90s":
+          yearMinSlider.value = 1990;
+          yearMaxSlider.value = 1999;
+          countrySelect.value = "US";
+          typeSelect.value = "movie";
+          break;
+        case "usa-80s-90s":
+          yearMinSlider.value = 1980;
+          yearMaxSlider.value = 1999;
+          countrySelect.value = "US";
+          typeSelect.value = "movie";
+          break;
+        case "uk-80s":
+          yearMinSlider.value = 1980;
+          yearMaxSlider.value = 1989;
+          countrySelect.value = "GB";
+          typeSelect.value = "movie";
+          break;
+        case "uk-90s":
+          yearMinSlider.value = 1990;
+          yearMaxSlider.value = 1999;
+          countrySelect.value = "GB";
+          typeSelect.value = "movie";
+          break;
+        case "japan-80s":
+          yearMinSlider.value = 1980;
+          yearMaxSlider.value = 1989;
+          countrySelect.value = "JP";
+          typeSelect.value = "movie";
+          break;
+        case "japan-90s":
+          yearMinSlider.value = 1990;
+          yearMaxSlider.value = 1999;
+          countrySelect.value = "JP";
+          typeSelect.value = "movie";
+          break;
+        case "classic-50s":
+          yearMinSlider.value = 1950;
+          yearMaxSlider.value = 1959;
+          countrySelect.value = "";
+          typeSelect.value = "movie";
+          break;
+        case "classic-60s":
+          yearMinSlider.value = 1960;
+          yearMaxSlider.value = 1969;
+          countrySelect.value = "";
+          typeSelect.value = "movie";
+          break;
+        case "modern-2010s":
+          yearMinSlider.value = 2010;
+          yearMaxSlider.value = 2019;
+          countrySelect.value = "";
+          typeSelect.value = "all";
+          break;
+        case "modern-2020s":
+          yearMinSlider.value = 2020;
+          yearMaxSlider.value = 2025;
+          countrySelect.value = "";
+          typeSelect.value = "all";
+          break;
+      }
+      updateYearLabel();
+    }
+
+    // Event Handlers
+    let saving = false;
+    document.getElementById("save-button").onclick = () => {
+      if (saving) return;
+      saving = true;
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = document.getElementById("movie-poster").src;
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "vcr.jpg";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setTimeout(() => saving = false, 1000);
+        }, "image/jpeg");
+      };
+
+      img.onerror = () => {
+        ErrorHandler.showError("❌ Couldn't download image — CORS blocked by host.");
+        saving = false;
+      };
+    };
+
+    // Prevent double-save by handling wrapper click cleanly
+    const wrapper = document.getElementById("save-button-wrapper");
+    wrapper.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.getElementById("save-button").click();
+    });
+
+    // Button Event Handlers
+    document.getElementById("genre-button").onclick = () => {
+      appState.currentGenre = appState.genres[Math.floor(Math.random() * appState.genres.length)];
+      const genreSelect = document.getElementById("genre-select");
+      genreSelect.value = appState.currentGenre.name;
+      document.getElementById("genre-button").querySelector("img").src = `${appState.currentGenre.name.toLowerCase()}.png`;
+
+      const selectedType = document.getElementById("type-select").value;
+      const selectedGenreId = selectedType === "tv" ? appState.currentGenre.tv : appState.currentGenre.movie;
+
+      if (appState.fetchTimer) clearTimeout(appState.fetchTimer);
+
+      fetchWithCountdown(false, true).then(() => {
+        appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+      });
+    };
+
+    // ===== SIMPLE TRAILER SYSTEM =====
+    
+    // Global trailer state
+    let isAutoTrailerMode = false;
+    let currentTrailerUrl = null;
+    
+    // 1. Single Trailer Mode - Play current trailer, stay open
+    function playSingleTrailer() {
+      console.log("🎬 Single trailer button clicked");
+      console.log("🎬 Current trailer URL:", currentTrailerUrl);
+      console.log("🎬 AppState trailer URL:", appState.currentTrailerUrl);
+      
+      // Use either global or appState trailer URL
+      const trailerUrl = currentTrailerUrl || appState.currentTrailerUrl;
+      
+      if (!trailerUrl) {
+        console.warn("❌ No trailer available - trying to find one...");
+        // Try to find a trailer if none is available
+        findTrailerAndPlay();
+        return;
+      }
+      
+      console.log("🎬 Playing single trailer");
+      isAutoTrailerMode = false;
+      
+      // Play trailer in popup
+      playTrailer(trailerUrl);
+    }
+    
+    // 2. Auto-Trailer Mode - Play trailers continuously
+    function startAutoTrailerMode() {
+      console.log("🎬 Auto-trailer button clicked");
+      console.log("🎬 Starting auto-trailer mode");
+      
+      // Stop any background fetching
+      if (appState.fetchTimer) {
+        clearTimeout(appState.fetchTimer);
+        appState.fetchTimer = null;
+        console.log("🛑 Stopped background auto-fetch");
+      }
+      
+      window.isAutoTrailerMode = true;
+      console.log("🎬 Auto-trailer mode set to:", window.isAutoTrailerMode);
+      
+      // Check if we have a current film with a trailer
+      if (appState.currentTrailerUrl && appState.currentTrailerUrl.includes("youtube.com")) {
+        console.log("🎬 Playing current film's trailer:", appState.currentTrailerUrl);
+        playTrailer(appState.currentTrailerUrl);
+      } else {
+        console.log("🎬 No current trailer, finding new film with trailer");
+        findTrailerAndPlay();
+      }
+    }
+    
+    // 3. Manual Skip - Skip to next trailer immediately
+    function skipToNextTrailer() {
+      console.log("⏭️ Skipping to next trailer");
+      findTrailerAndPlay();
+    }
+    
+    // 4. Toggle Auto-Trailer Mode
+    function toggleAutoTrailer() {
+      window.isAutoTrailerMode = !window.isAutoTrailerMode;
+      const button = document.getElementById('overlay-auto-toggle');
+      
+      if (window.isAutoTrailerMode) {
+        console.log("🎬 Auto-trailer mode ENABLED");
+        button.textContent = "Auto: ON";
+        button.style.backgroundColor = "#ffcc00";
+        button.style.color = "#000";
+        
+        // Auto-advance is now handled by onPlayerStateChange event
+      } else {
+        console.log("🎬 Auto-trailer mode DISABLED");
+        button.textContent = "Auto: OFF";
+        button.style.backgroundColor = "";
+        button.style.color = "";
+        
+        // Auto-advance is now handled by onPlayerStateChange event
+      }
+    }
+    
+    // 5. Quick advance function (for testing)
+    function quickAdvance() {
+      console.log("⚡ Quick advance triggered");
+      if (window.isAutoTrailerMode) {
+        findTrailerAndPlay();
+      }
+    }
+    
+    // Auto-advance timer function - REMOVED
+    // Trailer advancement now only happens when video actually ends
+    // via the onPlayerStateChange event handler
+
+    // Button assignments
+    console.log("🔧 Setting up button assignments...");
+    
+    const nextButton = document.getElementById("next-button");
+    const trailerButton = document.getElementById("trailer-button");
+    const overlayNextButton = document.getElementById("overlay-next");
+    
+    if (nextButton) {
+      nextButton.onclick = startAutoTrailerMode;
+      console.log("✅ Auto-trailer button assigned");
+    } else {
+      console.error("❌ Auto-trailer button not found");
+    }
+    
+    if (trailerButton) {
+      trailerButton.onclick = playSingleTrailer;
+      console.log("✅ Single trailer button assigned");
+    } else {
+      console.error("❌ Single trailer button not found");
+    }
+    
+    if (overlayNextButton) {
+      overlayNextButton.onclick = skipToNextTrailer;
+      console.log("✅ Overlay next button assigned");
+    } else {
+      console.error("❌ Overlay next button not found");
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      
+      if (key === "e") exportFirestoreAsCSV?.();
+      if (key === "m") toggleMute?.();
+      if (key === "n" || key === "arrowright") document.getElementById("next-button")?.click();
+      if (key === "f") {
+        const iframe = document.querySelector("#player iframe");
+        const wrapper = document.getElementById("player");
+        if (!document.fullscreenElement) {
+          (iframe?.requestFullscreen?.() || wrapper?.requestFullscreen?.()).catch(err => {
+            console.warn("❌ Fullscreen failed:", err);
+          });
+        } else {
+          document.exitFullscreen?.();
+        }
+      }
+      if (key === 'escape') {
+        closeTrailer();
+      }
+      if (key === 'a') {
+        toggleAutoTrailer();
+      }
+      if (key === 'q') {
+        quickAdvance();
+      }
+    });
+
+    // Wheel and Touch Events
+    document.addEventListener("wheel", (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        return;
+      }
+
+      if (appState.swipeCooldown) return;
+      appState.swipeCooldown = true;
+      setTimeout(() => appState.swipeCooldown = false, 500);
+
+      const deltaY = e.deltaY;
+      const filterPanel = document.getElementById("filter-panel");
+      const infoPanel = document.getElementById("info-panel");
+
+      console.log("🎡 Wheel event | deltaY:", deltaY, "| swipeState:", appState.swipeState);
+
+      if (deltaY > 5) {
+        if (appState.swipeState === "filter") {
+          filterPanel.classList.remove("active");
+          appState.swipeState = "poster";
+        } else {
+          closeAllPanels();
+          togglePanel(true);
+        }
+      } else if (deltaY < -5) {
+        if (appState.swipeState === "info") {
+          togglePanel(false);
+        } else if (appState.swipeState === "poster") {
+          closeAllPanels();
+          filterPanel.classList.add("active");
+          appState.swipeState = "filter";
+
+          clearTimeout(appState.filterAutoCloseTimer);
+          appState.filterAutoCloseTimer = setTimeout(() => {
+            if (appState.swipeState === "filter") {
+              closeAllPanels();
+            }
+          }, 30000);
+        }
+      }
+    });
+
+    // Touch Events
+    let touchStartY = 0;
+    let touchEndY = 0;
+
+    document.addEventListener("touchstart", e => touchStartY = e.changedTouches[0].screenY);
+    document.addEventListener("touchend", e => {
+      touchEndY = e.changedTouches[0].screenY;
+      handleSwipeGesture();
+    });
+
+    function handleSwipeGesture() {
+      if (appState.swipeCooldown) return;
+      appState.swipeCooldown = true;
+      setTimeout(() => appState.swipeCooldown = false, 500);
+
+      const deltaY = touchEndY - touchStartY;
+      const filterPanel = document.getElementById("filter-panel");
+
+      if (deltaY > 4) {
+        if (appState.swipeState === "info") togglePanel(false);
+        else if (appState.swipeState === "poster") {
+          togglePanel(false);
+          filterPanel.classList.add("active");
+          appState.swipeState = "filter";
+          clearTimeout(appState.filterAutoCloseTimer);
+          appState.filterAutoCloseTimer = setTimeout(() => {
+            if (appState.swipeState === "filter") {
+              filterPanel.classList.remove("active");
+              appState.swipeState = "poster";
+            }
+          }, 30000);
+        }
+      } else if (deltaY < -4) {
+        if (appState.swipeState === "filter") {
+          filterPanel.classList.remove("active");
+          appState.swipeState = "poster";
+        } else if (appState.swipeState === "poster") {
+          filterPanel.classList.remove("active");
+          togglePanel(true);
+          appState.swipeState = "info";
+        }
+      }
+    }
+
+    // Overlay Info Management
+    let overlayFadeTimer;
+
+    function showOverlayInfo() {
+      appState.overlayInfo.style.opacity = "1";
+      const popoutBtn = document.getElementById("popout-overlay-button");
+      if (popoutBtn) popoutBtn.style.opacity = "1";
+
+      clearTimeout(overlayFadeTimer);
+
+      if (!appState.trailerPaused) {
+        overlayFadeTimer = setTimeout(() => {
+          appState.overlayInfo.style.opacity = "0";
+          if (popoutBtn) popoutBtn.style.opacity = "0";
+        }, 3000);
+      }
+    }
+
+    ['mousemove', 'touchstart', 'keydown'].forEach(event => {
+      document.getElementById("trailer-overlay").addEventListener(event, showOverlayInfo);
+    });
+
+    // Initialize on window load
+    window.onload = () => {
+      console.log("✅ window.onload fired");
+
+      // Mobile detection
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      
+      if (isMobile || isTouch) {
+        console.log("📱 Mobile device detected");
+        document.body.classList.add('mobile-device');
+        
+        // Optimize touch interactions
+        const touchElements = document.querySelectorAll('button, [role="button"], input, select');
+        touchElements.forEach(el => {
+          el.style.touchAction = 'manipulation';
+        });
+      }
+
+      // DOM References
+      appState.overlayInfo = document.getElementById("overlay-info");
+      const genreSelect = document.getElementById("genre-select");
+      const moviePoster = document.getElementById("movie-poster");
+      const floatingButtons = document.querySelector(".floating-buttons");
+
+      // Init Genre Dropdown
+      document.getElementById("tmdb-button").disabled = true;
+      genreSelect.innerHTML = `<option value="all">All</option>` + 
+        appState.genres.map(g => `<option value="${g.name}">${g.name}</option>`).join("");
+      genreSelect.value = "Comedy";
+      appState.currentGenre = appState.genres.find(g => g.name === "Animation");
+
+      // Theme toggle
+      const themeButton = document.getElementById("theme-button");
+      if (themeButton) {
+        themeButton.onclick = () => {
+          document.body.classList.toggle("vcr-mode");
+          const isVcrMode = document.body.classList.contains("vcr-mode");
+          themeButton.textContent = isVcrMode ? "🎬 VCR Mode" : "🎬 VCR Mode";
+        };
+      }
+
+      // Filter summary
+      const filterSummaryBtn = document.getElementById("filter-summary-btn");
+      if (filterSummaryBtn) {
+        filterSummaryBtn.onclick = () => {
+          const genre = genreSelect.value;
+          const country = document.getElementById("country-select").value;
+          const type = document.getElementById("type-select").value;
+          const rating = document.getElementById("rating-range").value;
+          const yearMin = document.getElementById("year-min").value;
+          const yearMax = document.getElementById("year-max").value;
+          const preset = document.getElementById("preset-select").value;
+          const trailer = document.getElementById("trailer-select").value;
+          const sort = document.getElementById("sort-select").value;
+
+          let yearText = yearMin === yearMax ? yearMin : `${yearMin}-${yearMax}`;
+          if (yearMin === "1900" && yearMax === "2025") yearText = "All Years";
+
+          const sortText = {
+            "popularity.desc": "Popularity",
+            "vote_average.desc": "Rating",
+            "release_date.desc": "Newest",
+            "release_date.asc": "Oldest",
+            "title.asc": "Title A-Z"
+          }[sort] || "Popularity";
+
+          alert(`🎛️ Current Filters:\n\nGenre: ${genre}\nCountry: ${country}\nType: ${type}\nRating ≥ ${rating}\nYear(s): ${yearText}\nTrailer: ${trailer === "required" ? "Required" : "Any"}\nSort: ${sortText}${preset ? `\nPreset: ${preset}` : ""}`);
+        };
+      }
+
+      // Genre change event
+      genreSelect.addEventListener("change", async (e) => {
+        const selected = e.target.value;
+        const selectedType = document.getElementById("type-select").value;
+        
+        if (selected !== "all") {
+          // Validate the genre for the current type
+          const isValid = await tmdbService.validateGenre(selected, selectedType === "all" ? "movie" : selectedType);
+          
+          if (!isValid) {
+            console.warn(`⚠️ Genre "${selected}" may not have good results for ${selectedType} type`);
+            // Optionally show a warning to the user
+            if (selectedType !== "all") {
+              ErrorHandler.showError(`⚠️ "${selected}" may have limited results for ${selectedType.toUpperCase()}. Consider trying "All" types.`, 3000);
+            }
+          }
+        }
+        
+        appState.currentGenre = appState.genres.find(g => g.name === selected) || { name: "all", movie: "", tv: "" };
+        document.getElementById("genre-button").querySelector("img").src = `${appState.currentGenre.name.toLowerCase()}.png`;
+
+        if (appState.fetchTimer) clearTimeout(appState.fetchTimer);
+        fetchWithCountdown(false, true).then(() => {
+          appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+        });
+      });
+
+      // Year range slider logic
+      const yearMinSlider = document.getElementById("year-min");
+      const yearMaxSlider = document.getElementById("year-max");
+      
+      yearMinSlider?.addEventListener("input", (e) => {
+        const minValue = parseInt(e.target.value);
+        const maxValue = parseInt(yearMaxSlider.value);
+        if (minValue > maxValue) {
+          yearMaxSlider.value = minValue;
+        }
+        updateYearLabel();
+      });
+      
+      yearMaxSlider?.addEventListener("input", (e) => {
+        const maxValue = parseInt(e.target.value);
+        const minValue = parseInt(yearMinSlider.value);
+        if (maxValue < minValue) {
+          yearMinSlider.value = maxValue;
+        }
+        updateYearLabel();
+      });
+
+      // Rating display
+      const ratingSlider = document.getElementById("rating-range");
+      ratingSlider?.addEventListener("input", (e) => {
+        document.getElementById("rating-display").textContent = e.target.value;
+      });
+
+      // Preset selection
+      const presetSelect = document.getElementById("preset-select");
+      presetSelect?.addEventListener("change", (e) => {
+        if (e.target.value) {
+          applyPreset(e.target.value);
+        }
+      });
+
+      // Clear filters button
+      const clearFiltersBtn = document.getElementById("clear-filters-btn");
+      clearFiltersBtn?.addEventListener("click", () => {
+        tmdbService.resetFilters();
+      });
+
+      // Initialize year label
+      updateYearLabel();
+
+      // Auto-hide floating buttons
+      appState.fadeTimer = setTimeout(() => floatingButtons.classList.add("hidden"), 5000);
+      resetPanelFade();
+
+      // Poster click for new title
+      moviePoster.addEventListener("click", () => {
+        if (appState.fetchTimer) clearTimeout(appState.fetchTimer);
+        fetchWithCountdown(false, true).then(() => {
+          appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+        });
+      });
+
+      // Trailer overlay focus recovery
+      document.getElementById("trailer-overlay")?.addEventListener("click", () => {
+        setTimeout(() => window.focus(), 300);
+      });
+      document.getElementById("player")?.addEventListener("click", () => {
+        setTimeout(() => window.focus(), 300);
+      });
+
+      // History Recall (TMDB)
+      document.getElementById("tmdb-button").onclick = (e) => {
+        e.stopPropagation();
+        console.log("🖱️ TMDB button clicked");
+        console.log("📜 History count:", appState.fetchHistory.length);
+        if (appState.fetchHistory.length === 0) return;
+
+        appState.historyIndex = (appState.historyIndex + 1) % appState.fetchHistory.length;
+        const previous = appState.fetchHistory[appState.historyIndex];
+        if (previous) {
+          window.applyingFromHistory = true;
+          applyFilmToUI(previous);
+          window.applyingFromHistory = false;
+        }
+      };
+
+      // Mousemove reveal info panel
+      document.addEventListener("mousemove", () => {
+        const now = Date.now();
+        if (now - appState.lastMouseMoveTime < 200) return;
+        appState.lastMouseMoveTime = now;
+
+        const infoPanel = document.getElementById("info-panel");
+
+        if (!infoPanel.classList.contains("expanded")) {
+          infoPanel.classList.remove("hidden");
+
+          clearTimeout(appState.panelFadeTimer);
+          appState.panelFadeTimer = setTimeout(() => {
+            if (!infoPanel.classList.contains("expanded")) {
+              infoPanel.classList.add("hidden");
+            }
+          }, 5000);
+        }
+      });
+
+      // Validate genres on startup
+      async function validateAllGenres() {
+        console.log("🔍 Validating all genres...");
+        for (const genre of appState.genres) {
+          const movieValid = await tmdbService.validateGenre(genre.name, "movie");
+          const tvValid = await tmdbService.validateGenre(genre.name, "tv");
+          
+          if (!movieValid || !tvValid) {
+            console.warn(`⚠️ Genre "${genre.name}" has issues: Movie=${movieValid}, TV=${tvValid}`);
+          }
+        }
+        console.log("✅ Genre validation complete");
+      }
+      
+      // Run validation in background
+      validateAllGenres();
+
+      // First load
+      console.log("🚀 Starting first fetch...");
+      fetchWithCountdown(false, true).then(() => {
+
+        appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+      });
+    };
+
+    // Expose methods globally
+    // Make functions globally available
+    window.closeTrailer = closeTrailer;
+    window.togglePanel = togglePanel;
+    window.playTrailer = playTrailer;
+    window.showOverlayInfo = showOverlayInfo;
+    window.playSingleTrailer = playSingleTrailer;
+    window.startAutoTrailerMode = startAutoTrailerMode;
+    window.skipToNextTrailer = skipToNextTrailer;
+    window.toggleAutoTrailer = toggleAutoTrailer;
+    window.quickAdvance = quickAdvance;
+    window.findTrailerAndPlay = findTrailerAndPlay;
+    window.toggleMute = toggleMute;
+    window.popoutTrailer = popoutTrailer;
+    window.onPlayerStateChange = onPlayerStateChange;
+    window.exportFirestoreAsCSV = exportFirestoreAsCSV;
+    
+    // Initialize auto-trailer mode variable
+    window.isAutoTrailerMode = false;
+  </script>
+</body>
+</html>

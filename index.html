@@ -1299,9 +1299,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       <button id="overlay-next" onclick="skipToNextTrailer()" class="overlay-btn">Next</button>
       <button id="overlay-auto-toggle" onclick="toggleAutoTrailer()" class="overlay-btn">Auto: OFF</button>
       <button onclick="document.getElementById('genre-button').click()" class="overlay-btn">Genre</button>
-      <button onclick="window.open(appState.currentTMDBUrl, '_blank')" class="overlay-btn">TMDB</button>
-      <button onclick="document.getElementById('save-button').click()" class="overlay-btn">Save</button>
-      <button onclick="closeTrailer()" class="overlay-btn">Close</button>
+              <button onclick="window.open(window.appState.currentTMDBUrl, '_blank')" class="overlay-btn">TMDB</button>
+              <button onclick="document.getElementById('save-button').click()" class="overlay-btn">Save</button>
+        <button onclick="closeTrailer()" class="overlay-btn">Close</button>
     </div>
   </div>
 
@@ -1531,9 +1531,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           const selectedSort = document.getElementById("sort-select")?.value || "popularity.desc";
 
           const type = selectedType === "all" ? (Math.random() < 0.5 ? "movie" : "tv") : selectedType;
-          appState.isMovie = type === "movie";
+          window.appState.isMovie = type === "movie";
 
-          const genreObj = appState.genres.find(g => g.name === selectedGenreName);
+          const genreObj = window.appState.genres.find(g => g.name === selectedGenreName);
           const selectedGenreId = type === "tv" ? genreObj?.tv : genreObj?.movie;
 
           const yearMinInput = parseInt(document.getElementById("year-min")?.value || "1900");
@@ -1567,7 +1567,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
             params['vote_average.gte'] = selectedRating;
           }
           if (useYearFilter && yearMinInput <= yearMaxInput) {
-            if (appState.isMovie) {
+            if (window.appState.isMovie) {
               params['primary_release_date.gte'] = `${yearMinInput}-01-01`;
               params['primary_release_date.lte'] = `${yearMaxInput}-12-31`;
             } else {
@@ -1582,10 +1582,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           const data = await this.makeRequest(`/discover/${type}`, params);
           
           if (!data.results || data.results.length === 0) {
-            appState.failedFetchCount++;
-            console.warn(`No results found (attempt ${appState.failedFetchCount}/${appState.MAX_FAILED_FETCHES})`);
+            window.appState.failedFetchCount++;
+            console.warn(`No results found (attempt ${window.appState.failedFetchCount}/${window.appState.MAX_FAILED_FETCHES})`);
             
-            if (appState.failedFetchCount >= appState.MAX_FAILED_FETCHES) {
+            if (window.appState.failedFetchCount >= window.appState.MAX_FAILED_FETCHES) {
               console.warn("🔄 Too many failed attempts - trying with relaxed filters");
               
               // Try with relaxed filters before giving up
@@ -1602,7 +1602,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
                   language: 'en-US',
                   append_to_response: 'credits,videos'
                 });
-                appState.failedFetchCount = 0;
+                window.appState.failedFetchCount = 0;
                 return this.processMovieData(item, detailData, type);
               } else {
                 this.resetFilters();
@@ -1613,7 +1613,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           }
 
           const item = data.results[Math.floor(Math.random() * data.results.length)];
-          appState.failedFetchCount = 0;
+          window.appState.failedFetchCount = 0;
 
           if (!item.poster_path) {
             console.warn("Missing poster — retrying...");
@@ -1655,14 +1655,22 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         const director = detailData.credits?.crew?.find(c => c.job === "Director")?.name || "Unknown";
         const castList = detailData.credits?.cast?.slice(0, 5).map(c => c.name).join(", ") || "Unknown";
         const studio = detailData.production_companies?.[0]?.name || "Unknown";
-        const budget = appState.isMovie && detailData.budget ? 
+        const budget = window.appState.isMovie && detailData.budget ? 
           `$${(detailData.budget / 1_000_000).toFixed(1)}M` : "--";
+        
+        console.log("🔍 Debug: detailData.videos:", detailData.videos);
+        console.log("🔍 Debug: detailData.videos?.results:", detailData.videos?.results);
         
         const trailer = detailData.videos?.results?.find(v => 
           v.type === "Trailer" && v.site === "YouTube");
         
+        console.log("🔍 Debug: Found trailer:", trailer);
+        console.log("🔍 Debug: Trailer key:", trailer?.key);
+        
         const currentTrailerUrl = trailer ? 
           `https://www.youtube.com/watch?v=${trailer.key}` : null;
+        
+        console.log("🔍 Debug: Constructed trailer URL:", currentTrailerUrl);
         
         const runtime = detailData.runtime || 
           (Array.isArray(detailData.episode_run_time) ? detailData.episode_run_time[0] : "--");
@@ -1670,7 +1678,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         const originCountry = detailData.origin_country?.[0] || 
           detailData.production_countries?.[0]?.iso_3166_1 || "";
 
-        const metaText = appState.isMovie
+        const metaText = window.appState.isMovie
           ? `⭐️ ${rating} • 🍿 • ${runtime} mins • ${getFlagEmoji(originCountry)}`
           : `⭐️ ${rating} • 📺 • ${episodeCount} eps × ${runtime} mins • ${getFlagEmoji(originCountry)}`;
 
@@ -1691,7 +1699,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           originCountry,
           trailerUrl: currentTrailerUrl,
           trailerKey: trailer ? trailer.key : null,
-          genre: appState.currentGenre.name,
+          genre: window.appState.currentGenre.name,
           type,
           tmdbUrl,
           director: director ?? "Unknown",
@@ -1720,7 +1728,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           originCountry,
           trailerUrl: currentTrailerUrl,
           trailerKey: trailer ? trailer.key : null,
-          genre: appState.currentGenre.name,
+          genre: window.appState.currentGenre.name,
           type,
           tmdbUrl,
           director: director ?? "Unknown",
@@ -1766,7 +1774,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         document.getElementById("preset-select").value = "";
         document.getElementById("trailer-select").value = "any";
         document.getElementById("sort-select").value = "popularity.desc";
-        appState.failedFetchCount = 0;
+        window.appState.failedFetchCount = 0;
         document.getElementById("year-min-display").textContent = "1900";
         document.getElementById("year-max-display").textContent = "2025";
         document.getElementById("rating-display").textContent = "0";
@@ -1783,10 +1791,14 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     }
 
     function extractYouTubeId(url) {
+      console.log("🔍 Debug: extractYouTubeId called with URL:", url);
       try {
         const urlObj = new URL(url);
-        return urlObj.searchParams.get("v") || urlObj.pathname.split("/").pop();
-      } catch {
+        const videoId = urlObj.searchParams.get("v") || urlObj.pathname.split("/").pop();
+        console.log("🔍 Debug: Extracted video ID:", videoId);
+        return videoId;
+      } catch (error) {
+        console.error("🔍 Debug: Error extracting YouTube ID:", error);
         return null;
       }
     }
@@ -1891,7 +1903,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
               }
             }, 1000);
           } else {
-            console.log("🎬 Single mode - trailer ended, staying open");
+            console.log("🎬 Single mode - trailer ended, staying open for user interaction");
+            // In single trailer mode, stay open until user chooses to advance or close
           }
         }
         
@@ -1908,6 +1921,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
                 }
               }
             }, 2000);
+          } else {
+            console.log("🎬 Single mode: Video unstarted, staying open for user interaction");
+            // In single trailer mode, stay open even for restricted videos until user chooses
           }
         }
         
@@ -1924,6 +1940,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
                 }
               }
             }, 2000);
+          } else {
+            console.log("🎬 Single mode: Video error detected, staying open for user interaction");
+            // In single trailer mode, stay open even for error videos until user chooses
           }
         }
         
@@ -2148,10 +2167,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         if (window.isAutoTrailerMode) {
           setTimeout(() => {
             const player = document.getElementById('player');
-            const iframe = player?.querySelector('#custom-iframe-player');
+            const autoIframe = player?.querySelector('#auto-iframe-player');
             
-            if (!iframe) {
-              console.warn("⚠️ Auto-trailer mode: iframe not created, retrying...");
+            if (!autoIframe) {
+              console.warn("⚠️ Auto-trailer mode: auto-iframe not created, retrying...");
               createIframePlayer(videoId);
             }
           }, 500);
@@ -2164,6 +2183,14 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       console.log("🎥 === CREATING IFRAME PLAYER ===");
       console.log("🎥 Video ID:", videoId);
       
+      // Test with a known working YouTube video ID if the current one fails
+      if (!videoId || videoId.length < 10) {
+        console.error("❌ Invalid video ID:", videoId);
+        return;
+      }
+      
+
+      
       const playerDiv = document.getElementById('player');
       console.log("🎥 Player div found:", !!playerDiv);
       
@@ -2172,11 +2199,16 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         return;
       }
       
-      // Check if we already have a custom iframe player to prevent duplication
-      const existingIframe = document.getElementById('custom-iframe-player');
-      if (existingIframe) {
-        console.log("🎥 Custom iframe player already exists, removing old one");
-        existingIframe.remove();
+      // Clear any existing iframes
+      const existingSingleIframe = document.getElementById('single-iframe-player');
+      const existingAutoIframe = document.getElementById('auto-iframe-player');
+      if (existingSingleIframe) {
+        console.log("🎥 Single iframe player already exists, removing old one");
+        existingSingleIframe.remove();
+      }
+      if (existingAutoIframe) {
+        console.log("🎥 Auto iframe player already exists, removing old one");
+        existingAutoIframe.remove();
       }
       
       // No timers to clear - trailers play through naturally
@@ -2199,16 +2231,25 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       const iframe = document.createElement('iframe');
       iframe.width = '100%';
       iframe.height = '100%';
-      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1`;
       iframe.frameBorder = '0';
       iframe.allowFullscreen = true;
-      iframe.id = 'custom-iframe-player'; // Give it a unique ID
+      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      
+      // Set different IDs and behavior based on mode
+      if (window.isAutoTrailerMode) {
+        iframe.id = 'auto-iframe-player';
+        console.log("🎥 Creating AUTO-TRAILER iframe player for video:", videoId);
+      } else {
+        iframe.id = 'single-iframe-player';
+        console.log("🎥 Creating SINGLE-TRAILER iframe player for video:", videoId);
+      }
       
       playerDiv.appendChild(iframe);
       console.log("🎥 Iframe player created for video:", videoId);
       
       // Verify iframe was actually added
-      const addedIframe = playerDiv.querySelector('#custom-iframe-player');
+      const addedIframe = playerDiv.querySelector(`#${iframe.id}`);
       if (!addedIframe) {
         console.error("❌ Failed to add iframe to player div");
         return;
@@ -2226,6 +2267,35 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       iframe.addEventListener('load', () => {
         console.log("🎥 Iframe loaded, setting up event monitoring");
         
+        // Check if the iframe loaded successfully
+        setTimeout(() => {
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            if (iframeDoc && iframeDoc.body && iframeDoc.body.innerHTML.includes('Video unavailable')) {
+              console.error("❌ Video unavailable detected in iframe");
+              console.log("🔍 Debug: Video ID that failed:", videoId);
+              console.log("🔍 Debug: Iframe URL that failed:", iframe.src);
+              console.log("🔍 Debug: Iframe type:", iframe.id);
+              
+              // Handle based on iframe type
+              if (iframe.id === 'auto-iframe-player' && window.isAutoTrailerMode) {
+                console.log("🎥 AUTO-IFRAME: Video unavailable, auto-advancing to next trailer");
+                setTimeout(() => {
+                  if (window.findTrailerAndPlay) {
+                    window.findTrailerAndPlay();
+                  }
+                }, 2000);
+              } else if (iframe.id === 'single-iframe-player') {
+                console.log("🎥 SINGLE-IFRAME: Video unavailable, staying open for user interaction");
+                // Single iframe stays open - user must decide what to do
+              }
+            }
+          } catch (error) {
+            // Cross-origin restrictions might prevent accessing iframe content
+            console.log("🎥 Cannot check iframe content due to CORS restrictions");
+          }
+        }, 3000); // Check after 3 seconds
+        
         // No duration timer - let trailers play through naturally
         // The iframe message events will handle advancement when trailers actually end
         
@@ -2236,16 +2306,26 @@ body.vcr-mode .year-slider::-moz-range-thumb {
               const data = JSON.parse(event.data);
               if (data.event === 'onStateChange') {
                 // State 0 = ended, State 1 = playing, State 2 = paused
-                if (data.info === 0 && window.isAutoTrailerMode && !window.manualNextPressed) {
-                  console.log("🎥 YouTube iframe detected video end - advancing to next trailer");
-                  // No duration timer to clear - video ended naturally
-                  // Advance to next trailer
-                  if (window.findTrailerAndPlay) {
-                    try {
-                      window.findTrailerAndPlay();
-                    } catch (error) {
-                      console.error("❌ Error in video end callback:", error);
+                if (data.info === 0) {
+                  // Check which iframe triggered this event
+                  const isAutoIframe = iframe.id === 'auto-iframe-player';
+                  const isSingleIframe = iframe.id === 'single-iframe-player';
+                  
+                  if (isAutoIframe && window.isAutoTrailerMode && !window.manualNextPressed) {
+                    console.log("🎥 AUTO-IFRAME detected video end - auto-advancing to next trailer");
+                    // Auto-iframe in auto-trailer mode: automatically advance
+                    if (window.findTrailerAndPlay) {
+                      try {
+                        window.findTrailerAndPlay();
+                      } catch (error) {
+                        console.error("❌ Error in auto-advance callback:", error);
+                      }
                     }
+                  } else if (isSingleIframe) {
+                    console.log("🎥 SINGLE-IFRAME detected video end - staying open for user interaction");
+                    // Single iframe: stay open until user chooses to advance or close
+                  } else {
+                    console.log("🎥 Iframe video ended but conditions not met for auto-advancement");
                   }
                 }
               }
@@ -2261,28 +2341,48 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           setTimeout(() => {
             if (window.isAutoTrailerMode && !window.manualNextPressed) {
               const player = document.getElementById('player');
-              const iframe = player?.querySelector('#custom-iframe-player');
+              const autoIframe = player?.querySelector('#auto-iframe-player');
               
-              if (iframe) {
-                // Only skip if iframe is completely broken
+              if (autoIframe) {
+                // Only skip if auto-iframe is completely broken
                 try {
-                  const iframeSrc = iframe.src;
+                  const iframeSrc = autoIframe.src;
                   if (!iframeSrc || iframeSrc.includes('error') || iframeSrc.includes('unavailable')) {
-                    console.log("🎥 Trailer appears to be completely broken, skipping...");
+                    console.log("🎥 AUTO-IFRAME trailer appears to be completely broken - auto-advancing to next trailer");
+                    // Auto-iframe in auto-trailer mode: skip broken trailers automatically
                     if (window.findTrailerAndPlay) {
                       try {
                         window.findTrailerAndPlay();
                       } catch (error) {
-                        console.error("❌ Error in broken trailer skip callback:", error);
+                        console.error("❌ Error in broken trailer auto-advance callback:", error);
                       }
                     }
                   }
                 } catch (error) {
-                  console.log("🎥 Cannot check iframe src, continuing...");
+                  console.log("🎥 Cannot check auto-iframe src, continuing...");
                 }
               }
             }
           }, 10000); // Check after 10 seconds for completely broken trailers
+          
+          // Add fallback auto-advancement timer for AUTO-IFRAME player in auto-trailer mode
+          // This ensures trailers advance even if the iframe message events don't work
+          console.log("🎥 Setting up fallback auto-advancement timer for AUTO-IFRAME player");
+          const fallbackTimer = setTimeout(() => {
+            if (window.isAutoTrailerMode && !window.manualNextPressed) {
+              console.log("🎥 Fallback timer triggered for AUTO-IFRAME - auto-advancing to next trailer");
+              if (window.findTrailerAndPlay) {
+                try {
+                  window.findTrailerAndPlay();
+                } catch (error) {
+                  console.error("❌ Error in fallback auto-advance callback:", error);
+                }
+              }
+            }
+          }, 300000); // 5 minutes fallback - adjust this value as needed
+          
+          // Store the timer so it can be cleared if needed
+          window.iframeFallbackTimer = fallbackTimer;
         }
       });
     }
@@ -2339,16 +2439,28 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         console.log("🛑 Cleared auto-advance timer");
       }
       
+      // Clear iframe fallback timer
+      if (window.iframeFallbackTimer) {
+        clearTimeout(window.iframeFallbackTimer);
+        window.iframeFallbackTimer = null;
+        console.log("🛑 Cleared iframe fallback timer");
+      }
+      
       // No timers to clear - trailers play through naturally
       
-      // Clear the player div and remove any custom iframe
+      // Clear the player div and remove any iframes
       const playerDiv = document.getElementById('player');
       if (playerDiv) {
-        // Remove the custom iframe player specifically
-        const customIframe = document.getElementById('custom-iframe-player');
-        if (customIframe) {
-          customIframe.remove();
-          console.log("🎥 Removed custom iframe player");
+        // Remove both types of iframe players
+        const singleIframe = document.getElementById('single-iframe-player');
+        const autoIframe = document.getElementById('auto-iframe-player');
+        if (singleIframe) {
+          singleIframe.remove();
+          console.log("🎥 Removed single iframe player");
+        }
+        if (autoIframe) {
+          autoIframe.remove();
+          console.log("🎥 Removed auto iframe player");
         }
         playerDiv.innerHTML = '';
       }
@@ -2518,7 +2630,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       console.log("🔍 Finding film with trailer (no auto-play)...");
       
       try {
-        const data = await tmdbService.getRandomTitle(true);
+        const data = await window.tmdbService.getRandomTitle(true);
         
         if (data && data.trailerUrl?.includes("youtube.com")) {
           console.log("🎬 Found film with trailer:", data.trailerUrl);
@@ -2528,7 +2640,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           
           // Store current trailer URL
           window.currentTrailerUrl = data.trailerUrl;
-          appState.currentTrailerUrl = data.trailerUrl;
+          window.appState.currentTrailerUrl = data.trailerUrl;
           
           console.log("✅ Film with trailer loaded and ready for playback");
         } else {
@@ -2551,7 +2663,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       console.log("🔍 Auto-trailer mode:", window.isAutoTrailerMode ? "ON" : "OFF");
       
       try {
-        const data = await tmdbService.getRandomTitle(true);
+        const data = await window.tmdbService.getRandomTitle(true);
         
         if (data && data.trailerUrl?.includes("youtube.com")) {
           console.log("🎬 Found trailer — playing", data.trailerUrl);
@@ -2559,12 +2671,19 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           // Reset manual control flag when starting new trailer
           window.manualNextPressed = false;
           
+          // Clear any existing iframe fallback timer when starting new trailer
+          if (window.iframeFallbackTimer) {
+            clearTimeout(window.iframeFallbackTimer);
+            window.iframeFallbackTimer = null;
+            console.log("🛑 Cleared existing iframe fallback timer when starting new trailer");
+          }
+          
           // Update UI with film data
           applyFilmToUI(data);
           
           // Store current trailer URL
           window.currentTrailerUrl = data.trailerUrl;
-          appState.currentTrailerUrl = data.trailerUrl;
+          window.appState.currentTrailerUrl = data.trailerUrl;
           
           // Play the trailer in popup
           playTrailer(data.trailerUrl);
@@ -2635,8 +2754,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     }
 
     function popoutTrailer() {
-      if (appState.currentTrailerUrl) {
-        window.open(appState.currentTrailerUrl, '_blank', 'width=800,height=450');
+              if (window.appState.currentTrailerUrl) {
+          window.open(window.appState.currentTrailerUrl, '_blank', 'width=800,height=450');
       } else {
         console.warn("��️ No trailer URL to pop out.");
       }
@@ -2772,18 +2891,18 @@ body.vcr-mode .year-slider::-moz-range-thumb {
 
     // Button Event Handlers
     document.getElementById("genre-button").onclick = () => {
-      appState.currentGenre = appState.genres[Math.floor(Math.random() * appState.genres.length)];
+              window.appState.currentGenre = window.appState.genres[Math.floor(Math.random() * window.appState.genres.length)];
       const genreSelect = document.getElementById("genre-select");
-      genreSelect.value = appState.currentGenre.name;
-      document.getElementById("genre-button").querySelector("img").src = `${appState.currentGenre.name.toLowerCase()}.png`;
+      genreSelect.value = window.appState.currentGenre.name;
+              document.getElementById("genre-button").querySelector("img").src = `${window.appState.currentGenre.name.toLowerCase()}.png`;
 
       const selectedType = document.getElementById("type-select").value;
-      const selectedGenreId = selectedType === "tv" ? appState.currentGenre.tv : appState.currentGenre.movie;
+      const selectedGenreId = selectedType === "tv" ? window.appState.currentGenre.tv : window.appState.currentGenre.movie;
 
-      if (appState.fetchTimer) clearTimeout(appState.fetchTimer);
+      if (window.appState.fetchTimer) clearTimeout(window.appState.fetchTimer);
 
       fetchWithCountdown(false, true).then(() => {
-        appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+        window.appState.fetchTimer = setTimeout(startAutoFetch, 60000);
       });
     };
 
@@ -2797,8 +2916,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     function playSingleTrailer() {
       console.log("🎬 === SINGLE TRAILER BUTTON CLICKED ===");
       console.log("🎬 Global currentTrailerUrl:", window.currentTrailerUrl);
-      console.log("🎬 AppState trailer URL:", appState.currentTrailerUrl);
-      console.log("🎬 AppState current film:", appState.currentFilm);
+      console.log("🎬 AppState trailer URL:", window.appState.currentTrailerUrl);
+      console.log("🎬 AppState current film:", window.appState.currentFilm);
       
       // Check if DOM elements are ready
       const playerDiv = document.getElementById('player');
@@ -2824,7 +2943,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       console.log("✅ DOM elements ready - player div:", playerDiv, "overlay:", overlay);
       
       // Use either global or appState trailer URL
-      let trailerUrl = window.currentTrailerUrl || appState.currentTrailerUrl;
+      let trailerUrl = window.currentTrailerUrl || window.appState.currentTrailerUrl;
       
       console.log("🎬 Trailer URL to play:", trailerUrl);
       
@@ -2858,7 +2977,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         setTimeout(() => {
           const overlay = document.getElementById('trailer-overlay');
           const player = document.getElementById('player');
-          const iframe = player?.querySelector('#custom-iframe-player');
+          const iframe = player?.querySelector('#single-iframe-player, #auto-iframe-player');
           
           if (overlay && overlay.classList.contains('active') && !iframe) {
             console.warn("⚠️ Trailer overlay opened but iframe not created - retrying...");
@@ -2877,10 +2996,17 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       console.log("🎬 Starting auto-trailer mode");
       
       // Stop any background fetching
-      if (appState.fetchTimer) {
-        clearTimeout(appState.fetchTimer);
-        appState.fetchTimer = null;
+      if (window.appState.fetchTimer) {
+        clearTimeout(window.appState.fetchTimer);
+        window.appState.fetchTimer = null;
         console.log("🛑 Stopped background auto-fetch");
+      }
+      
+      // Clear any existing iframe fallback timer
+      if (window.iframeFallbackTimer) {
+        clearTimeout(window.iframeFallbackTimer);
+        window.iframeFallbackTimer = null;
+        console.log("🛑 Cleared existing iframe fallback timer");
       }
       
       window.isAutoTrailerMode = true;
@@ -2904,8 +3030,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       }
       
       // Check if we have a current film with a trailer
-      if (appState.currentTrailerUrl && appState.currentTrailerUrl.includes("youtube.com")) {
-        console.log("🎬 Playing current film's trailer:", appState.currentTrailerUrl);
+              if (window.appState.currentTrailerUrl && window.appState.currentTrailerUrl.includes("youtube.com")) {
+          console.log("🎬 Playing current film's trailer:", window.appState.currentTrailerUrl);
         
         // Ensure overlay is fully ready before playing trailer
         const overlay = document.getElementById('trailer-overlay');
@@ -2917,7 +3043,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         
         // Use a longer delay to ensure overlay is fully ready
         setTimeout(() => {
-          playTrailer(appState.currentTrailerUrl);
+          playTrailer(window.appState.currentTrailerUrl);
           console.log("🎬 playTrailer() called for auto-trailer mode");
         }, 200); // Increased from 50ms to 200ms for better reliability
       } else {
@@ -2950,6 +3076,13 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       
       window.manualNextPressed = true; // Set manual control flag
       
+      // Clear iframe fallback timer when manually skipping
+      if (window.iframeFallbackTimer) {
+        clearTimeout(window.iframeFallbackTimer);
+        window.iframeFallbackTimer = null;
+        console.log("🛑 Cleared iframe fallback timer when manually skipping");
+      }
+      
       // No timers to clear - trailers play through naturally
       
       findTrailerAndPlay();
@@ -2966,9 +3099,16 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         button.style.backgroundColor = "#ffcc00";
         button.style.color = "#000";
         
+        // Clear any existing iframe fallback timer
+        if (window.iframeFallbackTimer) {
+          clearTimeout(window.iframeFallbackTimer);
+          window.iframeFallbackTimer = null;
+          console.log("🛑 Cleared existing iframe fallback timer when enabling auto mode");
+        }
+        
         // Start playing trailers immediately when auto-trailer mode is enabled
-        if (appState.currentTrailerUrl && appState.currentTrailerUrl.includes("youtube.com")) {
-          console.log("🎬 Playing current film's trailer in auto-trailer mode:", appState.currentTrailerUrl);
+        if (window.appState.currentTrailerUrl && window.appState.currentTrailerUrl.includes("youtube.com")) {
+          console.log("🎬 Playing current film's trailer in auto-trailer mode:", window.appState.currentTrailerUrl);
           
           // Ensure overlay is fully ready before playing trailer
           const overlay = document.getElementById('trailer-overlay');
@@ -2980,7 +3120,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           
           // Use a longer delay to ensure overlay is fully ready
           setTimeout(() => {
-            playTrailer(appState.currentTrailerUrl);
+            playTrailer(window.appState.currentTrailerUrl);
             console.log("🎬 playTrailer() called for toggle auto-trailer mode");
           }, 200); // Increased from 50ms to 200ms for better reliability
         } else {
@@ -2997,6 +3137,13 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         
         // Reset manual control flag when disabling auto-trailer mode
         window.manualNextPressed = false;
+        
+        // Clear iframe fallback timer when switching to single mode
+        if (window.iframeFallbackTimer) {
+          clearTimeout(window.iframeFallbackTimer);
+          window.iframeFallbackTimer = null;
+          console.log("🛑 Cleared iframe fallback timer when switching to single mode");
+        }
         
         // No timers to clear - trailers play through naturally
         
@@ -3020,7 +3167,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     function debugTrailerState() {
       console.log("🔍 === TRAILER STATE DEBUG ===");
       console.log("🔍 Global currentTrailerUrl:", window.currentTrailerUrl);
-      console.log("🔍 AppState currentTrailerUrl:", appState.currentTrailerUrl);
+      console.log("🔍 AppState currentTrailerUrl:", window.appState.currentTrailerUrl);
       console.log("🔍 Auto-trailer mode:", window.isAutoTrailerMode ? "ON" : "OFF");
       console.log("🔍 Manual next pressed:", window.manualNextPressed ? "YES" : "NO");
       console.log("🔍 Trailer button disabled:", document.getElementById("trailer-button")?.disabled);
@@ -3047,7 +3194,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         console.log("🔍 Player state:", {
           innerHTML: player.innerHTML.length,
           hasIframe: !!player.querySelector('iframe'),
-          hasCustomIframe: !!player.querySelector('#custom-iframe-player')
+          hasCustomIframe: !!player.querySelector('#single-iframe-player, #auto-iframe-player')
         });
       } else {
         console.log("🔍 Player not found");
@@ -3133,35 +3280,35 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         return;
       }
 
-      if (appState.swipeCooldown) return;
-      appState.swipeCooldown = true;
-      setTimeout(() => appState.swipeCooldown = false, 500);
+      if (window.appState.swipeCooldown) return;
+      window.appState.swipeCooldown = true;
+      setTimeout(() => window.appState.swipeCooldown = false, 500);
 
       const deltaY = e.deltaY;
       const filterPanel = document.getElementById("filter-panel");
       const infoPanel = document.getElementById("info-panel");
 
-      console.log("🎡 Wheel event | deltaY:", deltaY, "| swipeState:", appState.swipeState);
+      console.log("🎡 Wheel event | deltaY:", deltaY, "| swipeState:", window.appState.swipeState);
 
       if (deltaY > 5) {
-        if (appState.swipeState === "filter") {
+        if (window.appState.swipeState === "filter") {
           filterPanel.classList.remove("active");
-          appState.swipeState = "poster";
+          window.appState.swipeState = "poster";
         } else {
           closeAllPanels();
           togglePanel(true);
         }
       } else if (deltaY < -5) {
-        if (appState.swipeState === "info") {
+        if (window.appState.swipeState === "info") {
           togglePanel(false);
-        } else if (appState.swipeState === "poster") {
+        } else if (window.appState.swipeState === "poster") {
           closeAllPanels();
           filterPanel.classList.add("active");
-          appState.swipeState = "filter";
+          window.appState.swipeState = "filter";
 
-          clearTimeout(appState.filterAutoCloseTimer);
-          appState.filterAutoCloseTimer = setTimeout(() => {
-            if (appState.swipeState === "filter") {
+          clearTimeout(window.appState.filterAutoCloseTimer);
+          window.appState.filterAutoCloseTimer = setTimeout(() => {
+            if (window.appState.swipeState === "filter") {
               closeAllPanels();
             }
           }, 30000);
@@ -3180,35 +3327,35 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     });
 
     function handleSwipeGesture() {
-      if (appState.swipeCooldown) return;
-      appState.swipeCooldown = true;
-      setTimeout(() => appState.swipeCooldown = false, 500);
+      if (window.appState.swipeCooldown) return;
+      window.appState.swipeCooldown = true;
+      setTimeout(() => window.appState.swipeCooldown = false, 500);
 
       const deltaY = touchEndY - touchStartY;
       const filterPanel = document.getElementById("filter-panel");
 
       if (deltaY > 4) {
-        if (appState.swipeState === "info") togglePanel(false);
-        else if (appState.swipeState === "poster") {
+        if (window.appState.swipeState === "info") togglePanel(false);
+        else if (window.appState.swipeState === "poster") {
           togglePanel(false);
           filterPanel.classList.add("active");
-          appState.swipeState = "filter";
-          clearTimeout(appState.filterAutoCloseTimer);
-          appState.filterAutoCloseTimer = setTimeout(() => {
-            if (appState.swipeState === "filter") {
+          window.appState.swipeState = "filter";
+          clearTimeout(window.appState.filterAutoCloseTimer);
+          window.appState.filterAutoCloseTimer = setTimeout(() => {
+            if (window.appState.swipeState === "filter") {
               filterPanel.classList.remove("active");
-              appState.swipeState = "poster";
+              window.appState.swipeState = "poster";
             }
           }, 30000);
         }
       } else if (deltaY < -4) {
-        if (appState.swipeState === "filter") {
+        if (window.appState.swipeState === "filter") {
           filterPanel.classList.remove("active");
-          appState.swipeState = "poster";
-        } else if (appState.swipeState === "poster") {
+          window.appState.swipeState = "poster";
+        } else if (window.appState.swipeState === "poster") {
           filterPanel.classList.remove("active");
           togglePanel(true);
-          appState.swipeState = "info";
+          window.appState.swipeState = "info";
         }
       }
     }
@@ -3217,15 +3364,15 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     let overlayFadeTimer;
 
     function showOverlayInfo() {
-      appState.overlayInfo.style.opacity = "1";
+      window.appState.overlayInfo.style.opacity = "1";
       const popoutBtn = document.getElementById("popout-overlay-button");
       if (popoutBtn) popoutBtn.style.opacity = "1";
 
       clearTimeout(overlayFadeTimer);
 
-      if (!appState.trailerPaused) {
+      if (!window.appState.trailerPaused) {
         overlayFadeTimer = setTimeout(() => {
-          appState.overlayInfo.style.opacity = "0";
+          window.appState.overlayInfo.style.opacity = "0";
           if (popoutBtn) popoutBtn.style.opacity = "0";
         }, 3000);
       }
@@ -3298,9 +3445,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       // Init Genre Dropdown
       document.getElementById("tmdb-button").disabled = true;
       genreSelect.innerHTML = `<option value="all">All</option>` + 
-        appState.genres.map(g => `<option value="${g.name}">${g.name}</option>`).join("");
+        window.appState.genres.map(g => `<option value="${g.name}">${g.name}</option>`).join("");
       genreSelect.value = "Animation";
-      appState.currentGenre = appState.genres.find(g => g.name === "Animation");
+      window.appState.currentGenre = window.appState.genres.find(g => g.name === "Animation");
 
       // Theme toggle
       const themeButton = document.getElementById("theme-button");
@@ -3375,8 +3522,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           }
         }
         
-        appState.currentGenre = appState.genres.find(g => g.name === selected) || { name: "all", movie: "", tv: "" };
-        document.getElementById("genre-button").querySelector("img").src = `${appState.currentGenre.name.toLowerCase()}.png`;
+        window.appState.currentGenre = window.appState.genres.find(g => g.name === selected) || { name: "all", movie: "", tv: "" };
+        document.getElementById("genre-button").querySelector("img").src = `${window.appState.currentGenre.name.toLowerCase()}.png`;
 
         if (appState.fetchTimer) clearTimeout(appState.fetchTimer);
         fetchWithCountdown(false, true).then(() => {
@@ -3488,7 +3635,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       // Validate genres on startup
       async function validateAllGenres() {
         console.log("🔍 Validating all genres...");
-        for (const genre of appState.genres) {
+        for (const genre of window.appState.genres) {
           const movieValid = await tmdbService.validateGenre(genre.name, "movie");
           const tvValid = await tmdbService.validateGenre(genre.name, "tv");
           

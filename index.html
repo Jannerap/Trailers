@@ -1296,10 +1296,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     </div>
     
     <div class="overlay-buttons">
-      <button id="overlay-next" onclick="nextTrailer()" class="overlay-btn">Next</button>
+      <button id="overlay-next" onclick="skipToNextTrailer()" class="overlay-btn">Next</button>
       <button id="overlay-auto-toggle" onclick="toggleAutoTrailer()" class="overlay-btn">Auto: OFF</button>
       <button onclick="document.getElementById('genre-button').click()" class="overlay-btn">Genre</button>
-      <button onclick="window.open(currentTMDBUrl, '_blank')" class="overlay-btn">TMDB</button>
+      <button onclick="window.open(appState.currentTMDBUrl, '_blank')" class="overlay-btn">TMDB</button>
       <button onclick="document.getElementById('save-button').click()" class="overlay-btn">Save</button>
       <button onclick="closeTrailer()" class="overlay-btn">Close</button>
     </div>
@@ -1995,7 +1995,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     function closeAllPanels() {
       document.getElementById("filter-panel").classList.remove("active");
       document.getElementById("info-panel").classList.remove("expanded");
-      appState.swipeState = "poster";
+      window.appState.swipeState = "poster";
     }
 
     function togglePanel(forceExpand = null) {
@@ -2004,38 +2004,38 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         ? forceExpand
         : !panel.classList.contains('expanded');
 
-      clearTimeout(appState.panelFadeTimer);
-      clearTimeout(appState.panelTimer);
+      clearTimeout(window.appState.panelFadeTimer);
+      clearTimeout(window.appState.panelTimer);
 
       if (shouldExpand) {
         panel.classList.remove('hidden');
         panel.classList.add('expanded');
-        appState.swipeState = "info";
+        window.appState.swipeState = "info";
 
         // Auto-collapse after 15s
-        appState.panelTimer = setTimeout(() => {
+        window.appState.panelTimer = setTimeout(() => {
           panel.classList.remove("expanded");
           resetPanelFade();
-          appState.swipeState = "poster";
+          window.appState.swipeState = "poster";
         }, 15000);
       } else {
         panel.classList.remove("expanded");
         resetPanelFade();
-        appState.swipeState = "poster";
+        window.appState.swipeState = "poster";
       }
     }
 
     function resetPanelFade() {
       const panel = document.getElementById('info-panel');
-      clearTimeout(appState.panelFadeTimer);
+      clearTimeout(window.appState.panelFadeTimer);
 
       if (panel.classList.contains("expanded")) {
-        appState.panelFadeTimer = setTimeout(() => {
+        window.appState.panelFadeTimer = setTimeout(() => {
           panel.classList.remove("expanded");
           resetPanelFade();
         }, 15000);
       } else {
-        appState.panelFadeTimer = setTimeout(() => {
+        window.appState.panelFadeTimer = setTimeout(() => {
           panel.classList.add("hidden");
         }, 5000);
       }
@@ -2284,7 +2284,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
             }
           }, 10000); // Check after 10 seconds for completely broken trailers
         }
-      }
+      });
     }
 
     // Fetch and Countdown Functions
@@ -2314,14 +2314,14 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         return;
       }
 
-      if (appState.fetchTimer) {
-        clearTimeout(appState.fetchTimer);
-        appState.fetchTimer = null;
+      if (window.appState.fetchTimer) {
+        clearTimeout(window.appState.fetchTimer);
+        window.appState.fetchTimer = null;
       }
 
       fetchWithCountdown(false, true).then(() => {
         if (!window.isAutoTrailerMode) {
-          appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+          window.appState.fetchTimer = setTimeout(startAutoFetch, 60000);
         } else {
           console.log("🛑 Skipped auto fetch loop restart — autoplay is now active.");
         }
@@ -2385,15 +2385,15 @@ body.vcr-mode .year-slider::-moz-range-thumb {
 
     // UI Application Functions
     function applyFilmToUI(data) {
-      console.log("📦 Current history count:", appState.fetchHistory.length);
-      appState.swipeState = "poster";
+      console.log("📦 Current history count:", window.appState.fetchHistory.length);
+      window.appState.swipeState = "poster";
 
       // Store history (unless we're recalling one)
       if (!window.applyingFromHistory) {
-        appState.fetchHistory.unshift(data);
-        if (appState.fetchHistory.length > 5) appState.fetchHistory.pop();
-        appState.historyIndex = 0;
-        document.getElementById("tmdb-button").disabled = appState.fetchHistory.length === 0;
+        window.appState.fetchHistory.unshift(data);
+        if (window.appState.fetchHistory.length > 5) window.appState.fetchHistory.pop();
+        window.appState.historyIndex = 0;
+        document.getElementById("tmdb-button").disabled = window.appState.fetchHistory.length === 0;
       }
 
       // Set core UI elements
@@ -2407,7 +2407,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       document.getElementById("overlay-tmdb").href = data.tmdbUrl;
       document.getElementById("overlay-description").textContent = data.overview;
 
-      document.getElementById("overlay-meta").textContent = appState.isMovie
+      document.getElementById("overlay-meta").textContent = window.appState.isMovie
         ? `${data.rating} • ${data.runtime} min • ${data.genre} • ${data.budget}`
         : `${data.rating} • ${data.episodeCount ?? "--"} eps × ${data.runtime ?? "--"} min • ${data.genre} • ${data.budget}`;
 
@@ -2424,10 +2424,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       // Store trailer URL for single trailer mode
       if (data.trailerUrl) {
         window.currentTrailerUrl = data.trailerUrl; // Set globally
-        appState.currentTrailerUrl = data.trailerUrl; // Also set in appState for compatibility
+        window.appState.currentTrailerUrl = data.trailerUrl; // Also set in appState for compatibility
         console.log("🎬 Trailer URL stored:", data.trailerUrl);
         console.log("🎬 Global currentTrailerUrl:", window.currentTrailerUrl);
-        console.log("🎬 AppState currentTrailerUrl:", appState.currentTrailerUrl);
+        console.log("🎬 AppState currentTrailerUrl:", window.appState.currentTrailerUrl);
       } else {
         console.warn("⚠️ No trailer URL in film data:", data);
         console.warn("⚠️ Film data keys:", Object.keys(data));
@@ -2459,7 +2459,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
             </div>
 
             <div id="info-meta" style="margin-top:1px; font-size:28px; color:#ffcc00; font-family:'DigitalDisplay', monospace; letter-spacing:1px;">
-              ${data.rating} • ${appState.isMovie ? `${data.runtime} min` : `${data.episodeCount ?? "--"} eps × ${data.runtime ?? "--"} min`} • ${data.genre || "No Genre Info"} • ${data.budget}
+              ${data.rating} • ${window.appState.isMovie ? `${data.runtime} min` : `${data.episodeCount ?? "--"} eps × ${data.runtime ?? "--"} min`} • ${data.genre || "No Genre Info"} • ${data.budget}
             </div>
           </div>
         `;
@@ -2467,8 +2467,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       }
 
       // Handle trailer button status
-      appState.currentTMDBUrl = data.tmdbUrl;
-      appState.currentTrailerUrl = data.trailerUrl;
+      window.appState.currentTMDBUrl = data.tmdbUrl;
+      window.appState.currentTrailerUrl = data.trailerUrl;
 
       const trailerBtn = document.getElementById("trailer-button");
       const trailerImg = trailerBtn?.querySelector("img");
@@ -2495,21 +2495,21 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       // Bind TMDB recall button
       const tmdbBtn = document.getElementById("tmdb-button");
       tmdbBtn.disabled = false;
-      if (!appState.tmdbClickBound) {
+      if (!window.appState.tmdbClickBound) {
         tmdbBtn.onclick = (e) => {
           e.stopPropagation();
           console.log("🖱️ TMDB button clicked");
-          if (appState.fetchHistory.length === 0) return;
+          if (window.appState.fetchHistory.length === 0) return;
 
-          appState.historyIndex = (appState.historyIndex + 1) % appState.fetchHistory.length;
-          const previous = appState.fetchHistory[appState.historyIndex];
+          window.appState.historyIndex = (window.appState.historyIndex + 1) % window.appState.fetchHistory.length;
+          const previous = window.appState.fetchHistory[window.appState.historyIndex];
           if (previous) {
             window.applyingFromHistory = true;
             applyFilmToUI(previous);
             window.applyingFromHistory = false;
           }
         };
-        appState.tmdbClickBound = true;
+        window.appState.tmdbClickBound = true;
       }
     }
 
@@ -2595,28 +2595,28 @@ body.vcr-mode .year-slider::-moz-range-thumb {
 
     function fetchWithCountdown(requireTrailer = false, preserveSwipeState = true) {
       if (window.isAutoTrailerMode) return Promise.resolve(false);
-      if (appState.isFetching) return Promise.resolve(false);
-      appState.isFetching = true;
+      if (window.appState.isFetching) return Promise.resolve(false);
+      window.appState.isFetching = true;
 
-      return tmdbService.getRandomTitle(requireTrailer).then((data) => {
+      return window.tmdbService.getRandomTitle(requireTrailer).then((data) => {
         if (data) {
           applyFilmToUI(data);
 
-          if (!preserveSwipeState && appState.swipeState === "info") {
+          if (!preserveSwipeState && window.appState.swipeState === "info") {
             togglePanel(false);
-            appState.swipeState = "poster";
+            window.appState.swipeState = "poster";
           }
 
           startFetchCountdown(60000);
-          appState.isFetching = false;
+          window.appState.isFetching = false;
           return true;
         } else {
-          appState.isFetching = false;
+          window.appState.isFetching = false;
           return false;
         }
       }).catch((err) => {
         console.error("Error in fetch:", err);
-        appState.isFetching = false;
+        window.appState.isFetching = false;
         return false;
       });
     }
@@ -3254,7 +3254,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         });
       }
 
-                // Initialize trailer overlay to ensure it's ready
+      // Initialize trailer overlay to ensure it's ready
       const trailerOverlay = document.getElementById("trailer-overlay");
       if (trailerOverlay) {
         // Force a reflow to ensure the overlay is properly initialized

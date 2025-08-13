@@ -1703,12 +1703,29 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     window.convertToCSV = function(data) {
       if (!data || data.length === 0) return "";
       
-      const headers = Object.keys(data[0]);
+      // Build a union of all keys across rows so we don't miss fields like posterUrl
+      const keySet = new Set();
+      for (const row of data) {
+        Object.keys(row || {}).forEach(k => keySet.add(k));
+      }
+      
+      // Prefer a stable, meaningful column order
+      const preferredOrder = [
+        'id','title','year','releaseDate','type','genre','rating','runtime','episodeCount',
+        'tmdbUrl','posterUrl','trailerUrl','trailerKey','director','castList','studio','budget',
+        'originCountry','popularity','metaText','timestamp','timestampReadable','cachedBy'
+      ];
+      
+      const headers = [
+        ...preferredOrder.filter(k => keySet.has(k)),
+        ...Array.from(keySet).filter(k => !preferredOrder.includes(k))
+      ];
+      
       const csvRows = [headers.join(',')];
       
       for (const row of data) {
         const values = headers.map(header => {
-          const value = row[header];
+          const value = row?.[header] ?? '';
           const escaped = String(value).replace(/"/g, '""');
           return `"${escaped}"`;
         });
@@ -2380,16 +2397,24 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         return;
       }
 
+      if (window.iframePlayerActive) {
+        console.log("⏹️ Trailer active — not starting auto fetch loop.");
+        return;
+      }
+
       if (window.appState.fetchTimer) {
         clearTimeout(window.appState.fetchTimer);
         window.appState.fetchTimer = null;
       }
 
       fetchWithCountdown(false, true).then(() => {
-        if (!window.isAutoTrailerMode) {
+        if (!window.isAutoTrailerMode && !window.iframePlayerActive) {
           window.appState.fetchTimer = setTimeout(startAutoFetch, 60000);
         } else {
-          console.log("🛑 Skipped auto fetch loop restart — autoplay is now active.");
+          console.log("🛑 Skipped auto fetch loop restart — trailer/auto mode active.", {
+            isAutoTrailerMode: window.isAutoTrailerMode,
+            iframePlayerActive: window.iframePlayerActive
+          });
         }
       });
     }
@@ -2894,7 +2919,11 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       if (window.appState.fetchTimer) clearTimeout(window.appState.fetchTimer);
 
       fetchWithCountdown(false, true).then(() => {
-        window.appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+        if (!window.iframePlayerActive) {
+          window.appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+        } else {
+          console.log("🛑 Skipped auto fetch scheduling — trailer is active.");
+        }
       });
     };
 
@@ -3062,22 +3091,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     function skipToNextTrailer() {
       console.log("⏭️ Skipping to next trailer");
       
-      // If we're in auto-trailer mode, disable it when manually skipping
+      // In auto-trailer mode, keep auto mode ON and just advance
       if (window.isAutoTrailerMode) {
-        console.log("🛑 Disabling auto-trailer mode due to manual skip");
-        window.isAutoTrailerMode = false;
-        
-        // Update the auto-toggle button to show it's off
-        const button = document.getElementById('overlay-auto-toggle');
-        if (button) {
-          button.textContent = "Auto: OFF";
-          button.style.backgroundColor = "";
-          button.style.color = "";
-        }
-        
-        // Restart the visual timer ring since we're back to auto-fetch mode
-        startFetchCountdown(20000); // 20 seconds countdown
-        console.log("🎬 Restarted visual timer ring for auto-fetch mode");
+        console.log("⏭️ Auto-trailer mode: advancing to next trailer (auto remains ON)");
       }
       
       window.manualNextPressed = true; // Set manual control flag
@@ -3249,8 +3265,14 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     const overlayNextButton = document.getElementById("overlay-next");
     
     if (nextButton) {
-      nextButton.onclick = startAutoTrailerMode;
-      console.log("✅ Auto-trailer button assigned");
+      nextButton.onclick = () => {
+        if (window.isAutoTrailerMode) {
+          skipToNextTrailer();
+        } else {
+          startAutoTrailerMode();
+        }
+      };
+      console.log("✅ Next button assigned (auto: start, when active: skip)");
     } else {
       console.error("❌ Auto-trailer button not found");
     }
@@ -3557,7 +3579,11 @@ body.vcr-mode .year-slider::-moz-range-thumb {
 
         if (appState.fetchTimer) clearTimeout(appState.fetchTimer);
         fetchWithCountdown(false, true).then(() => {
-          appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+          if (!window.iframePlayerActive) {
+            appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+          } else {
+            console.log("🛑 Skipped auto fetch scheduling — trailer is active.");
+          }
         });
       });
 
@@ -3618,7 +3644,11 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       moviePoster.addEventListener("click", () => {
         if (appState.fetchTimer) clearTimeout(appState.fetchTimer);
         fetchWithCountdown(false, true).then(() => {
-          appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+          if (!window.iframePlayerActive) {
+            appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+          } else {
+            console.log("🛑 Skipped auto fetch scheduling — trailer is active.");
+          }
         });
       });
 
@@ -3730,7 +3760,11 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           }
         }, 1000);
         
-        appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+        if (!window.iframePlayerActive) {
+          appState.fetchTimer = setTimeout(startAutoFetch, 60000);
+        } else {
+          console.log("🛑 Skipped initial auto fetch scheduling — trailer is active.");
+        }
       });
     };
 

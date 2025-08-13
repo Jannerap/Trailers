@@ -35,7 +35,8 @@
   width: 100vw;
   height: 100vh;
   background-color: black;
-  overflow: hidden;
+  /* Allow glow to extend until the viewport edge */
+  overflow: visible;
   /* Ensure poster is properly positioned */
   position: relative;
 }
@@ -55,6 +56,7 @@
 }
 
 #movie-poster {
+  /* Let poster reach full viewport width so glow fades off-screen naturally */
   max-width: 100vw;
   max-height: 100vh;
   width: auto;
@@ -71,28 +73,7 @@
 
 
 
-/* Mobile poster optimization */
-@media (max-width: 768px) {
-  #movie-poster {
-    /* Maintain aspect ratio while fitting width */
-    max-width: 100vw;
-    max-height: 100vh;
-    width: 100vw;
-    height: auto;
-    object-fit: contain;
-    /* Keep centered horizontally and anchored to top */
-    margin: 0 auto;
-    position: relative;
-    top: 0;
-  }
-  
-  #poster-wrapper {
-    overflow: hidden;
-    /* Ensure proper centering on mobile */
-    justify-content: center;
-    align-items: flex-start;
-  }
-}
+/* Removed mobile poster-specific overrides */
 
 #movie-poster.loaded {
   opacity: 1;
@@ -448,26 +429,33 @@
 }
 
 .filter-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  justify-items: center;
+  align-items: start;
+  margin-bottom: 12px;
 }
 
-.filter-item {
-  flex: 1;
-  min-width: 150px;
-  max-width: 200px;
-}
+.filter-item { width: 100%; }
 
 .year-range-section {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 15px;
-  width: 100%;
   justify-content: center;
+  gap: 8px;
+  width: 100%;
+  /* span full filter row grid so it's centered within the panel */
+  grid-column: 1 / -1;
+}
+
+.year-range-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .filter-label {
@@ -482,11 +470,15 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  justify-content: center;
 }
 
 .year-slider {
-  width: 150px;
+  width: 200px;
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
 }
 
 .year-display {
@@ -525,6 +517,14 @@
   -moz-appearance: none;
 }
 
+/* Ensure range inputs render like sliders */
+#filter-content input[type="range"] {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  width: auto;
+}
+
 #filter-content input:focus,
 #filter-content select:focus {
   outline: 2px solid #ffcc00;
@@ -544,18 +544,21 @@
 
 /* Button row styling */
 .filter-buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  justify-items: center;
+  align-items: stretch;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: none;
 }
 
 .filter-buttons .overlay-btn {
-  min-width: 120px;
-  padding: 10px 16px;
+  min-width: 0;
+  width: 100%;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(5px);
@@ -810,201 +813,12 @@ body.vcr-mode .year-slider::-moz-range-thumb {
 
 /* ---------------- Responsive Design ---------------- */
 
-@media (max-width: 768px) {
-  #info-title {
-    font-size: 24px;
-  }
-  
-  #info-meta {
-    font-size: 18px;
-  }
-  
-  #info-description {
-    font-size: 16px;
-  }
-  
-  .floating-buttons {
-    bottom: 16px;
-    gap: 8px;
-  }
-  
-  .floating-buttons button,
-  .floating-buttons > #save-button-wrapper {
-    height: 32px;
-    width: 32px;
-  }
-  
-  /* Mobile trailer optimizations */
-  .player-wrapper {
-    max-width: 95vw;
-    margin: 0 2.5vw;
-  }
-  
-  .overlay-buttons {
-    gap: 8px;
-    margin-top: 15px;
-  }
-  
-  .overlay-btn {
-    padding: 12px 16px;
-    font-size: 14px;
-    min-height: 44px; /* Touch target size */
-  }
-  
-  /* Mobile filter panel */
-  #filter-panel {
-    padding: 12px 16px;
-  }
-  
-  #filter-content {
-    padding: 15px;
-  }
-  
-  .filter-row {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .filter-item {
-    min-width: 100%;
-  }
-  
-  .year-range-section {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .year-sliders {
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .year-slider {
-    width: 200px;
-  }
-  
-  .filter-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .filter-buttons .overlay-btn {
-    min-width: 150px;
-    margin: 5px 0;
-  }
-  
-  #filter-content label {
-    font-size: 14px;
-  }
-  
-  #filter-content input,
-  #filter-content select {
-    padding: 8px;
-    font-size: 16px; /* Prevents zoom on iOS */
-    min-height: 44px;
-  }
-  
-  /* Mobile info panel */
-  #info-panel {
-    height: 80px;
-    padding: 4px 8px;
-  }
-  
-  .info-buttons button,
-  #save-button-wrapper {
-    height: 70px;
-    min-width: 44px;
-  }
-  
+/* Removed mobile-specific overrides (@media max-width: 768px) */
 
-}
-
-@media (max-width: 480px) {
-  #info-title {
-    font-size: 20px;
-  }
-  
-  #info-meta {
-    font-size: 16px;
-  }
-  
-  #info-description {
-    font-size: 14px;
-  }
-  
-  /* Extra small screen optimizations */
-  .floating-buttons {
-    bottom: 12px;
-    gap: 6px;
-  }
-  
-  .floating-buttons button,
-  .floating-buttons > #save-button-wrapper {
-    height: 28px;
-    width: 28px;
-  }
-  
-  .player-wrapper {
-    max-width: 98vw;
-    margin: 0 1vw;
-  }
-  
-  .overlay-btn {
-    padding: 10px 12px;
-    font-size: 12px;
-    min-height: 40px;
-  }
-  
-  #filter-panel {
-    padding: 8px 12px;
-  }
-  
-  #filter-content {
-    gap: 12px;
-  }
-  
-  #filter-content label {
-    font-size: 12px;
-  }
-  
-  #info-panel {
-    height: 75px;
-    padding: 2px 6px;
-  }
-  
-  .info-buttons button,
-  #save-button-wrapper {
-    height: 65px;
-  }
-  
-
-}
+/* Removed extra-small screen overrides (@media max-width: 480px) */
 
 /* Landscape orientation optimizations */
-@media (max-width: 768px) and (orientation: landscape) {
-  .player-wrapper {
-    max-width: 90vw;
-    max-height: 80vh;
-  }
-  
-  .overlay-buttons {
-    margin-top: 10px;
-  }
-  
-  .overlay-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-  
-  #info-panel {
-    height: 60px;
-  }
-  
-  .info-buttons button,
-  #save-button-wrapper {
-    height: 50px;
-  }
-}
+/* Removed landscape mobile overrides */
 
 /* Mobile device optimizations */
 .mobile-device {
@@ -1147,13 +961,15 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         <!-- Line 1: Year Range -->
         <div class="filter-row">
           <div class="year-range-section">
-            <span class="filter-label">Year Range:</span>
+            <div class="year-range-header">
+              <span class="filter-label">Year Range:</span>
+              <div class="year-display">
+                <span id="year-min-display">1900</span> - <span id="year-max-display">2025</span>
+              </div>
+            </div>
             <div class="year-sliders">
               <input type="range" id="year-min" min="1900" max="2025" value="1900" step="1" class="year-slider">
               <input type="range" id="year-max" min="1900" max="2025" value="2025" step="1" class="year-slider">
-            </div>
-            <div class="year-display">
-              <span id="year-min-display">1900</span> - <span id="year-max-display">2025</span>
             </div>
           </div>
         </div>
@@ -1248,6 +1064,12 @@ body.vcr-mode .year-slider::-moz-range-thumb {
                 <option value="release_date.asc">Oldest</option>
                 <option value="title.asc">Title A-Z</option>
               </select>
+            </label>
+          </div>
+
+          <div class="filter-item">
+            <label>18 or below:
+              <input type="checkbox" id="age-under18">
             </label>
           </div>
         </div>
@@ -1567,6 +1389,15 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           if (selectedRating > 0) {
             params['vote_average.gte'] = selectedRating;
           }
+          // Age filter: when "18 or below" is checked, exclude adult content and restrict certification
+          const under18 = document.getElementById("age-under18")?.checked === true;
+          if (under18) {
+            // Exclude adult content
+            params.include_adult = false;
+            // Restrict to content rated 18 or below using GB certifications
+            params.certification_country = 'GB';
+            params['certification.lte'] = '18';
+          }
           if (useYearFilter && yearMinInput <= yearMaxInput) {
             if (window.appState.isMovie) {
               params['primary_release_date.gte'] = `${yearMinInput}-01-01`;
@@ -1585,7 +1416,56 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           if (!data.results || data.results.length === 0) {
             window.appState.failedFetchCount++;
             console.warn(`No results found (attempt ${window.appState.failedFetchCount}/${window.appState.MAX_FAILED_FETCHES})`);
-            
+
+            // If a specific genre was chosen and it returned no results, try switching genres
+            if (selectedGenreName && selectedGenreName !== "all") {
+              console.log("🔄 Selected genre returned no results — attempting alternative genres");
+              const tryGenres = [...window.appState.genres]
+                .filter(g => g.name && g.name !== selectedGenreName);
+
+              // Shuffle genres to try random alternatives first
+              for (let i = tryGenres.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [tryGenres[i], tryGenres[j]] = [tryGenres[j], tryGenres[i]];
+              }
+
+              let fallbackFound = false;
+              for (const g of tryGenres.slice(0, 6)) { // try up to 6 alternatives
+                const altGenreId = (type === "tv" ? g.tv : g.movie) || "";
+                if (!altGenreId) continue;
+
+                const altParams = { ...params, with_genres: altGenreId, page: 1 };
+                try {
+                  const altData = await this.makeRequest(`/discover/${type}`, altParams);
+                  if (altData.results && altData.results.length > 0) {
+                    console.log(`✅ Found results by switching genre to: ${g.name}`);
+                    // Update current genre in app state and UI
+                    window.appState.currentGenre = g;
+                    const genreSelectEl = document.getElementById("genre-select");
+                    if (genreSelectEl) genreSelectEl.value = g.name;
+                    const genreBtnImg = document.getElementById("genre-button")?.querySelector("img");
+                    if (genreBtnImg) genreBtnImg.src = `${g.name.toLowerCase()}.png`;
+
+                    const altItem = altData.results[Math.floor(Math.random() * altData.results.length)];
+                    // Skip if missing poster to maintain quality
+                    if (!altItem?.poster_path) continue;
+
+                    const altDetail = await this.makeRequest(`/${type}/${altItem.id}`, {
+                      language: 'en-US',
+                      append_to_response: 'credits,videos'
+                    });
+                    const processed = this.processMovieData(altItem, altDetail, type);
+                    return processed;
+                  }
+                } catch (e) {
+                  console.warn(`⚠️ Alternative genre fetch failed for ${g.name}:`, e);
+                }
+              }
+              if (!fallbackFound) {
+                console.warn("❌ No alternative genres produced results; proceeding to relaxed filter strategy");
+              }
+            }
+
             if (window.appState.failedFetchCount >= window.appState.MAX_FAILED_FETCHES) {
               console.warn("🔄 Too many failed attempts - trying with relaxed filters");
               
@@ -1775,6 +1655,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         document.getElementById("preset-select").value = "";
         document.getElementById("trailer-select").value = "any";
         document.getElementById("sort-select").value = "popularity.desc";
+        const ageCheckbox = document.getElementById("age-under18");
+        if (ageCheckbox) ageCheckbox.checked = false;
         window.appState.failedFetchCount = 0;
         document.getElementById("year-min-display").textContent = "1900";
         document.getElementById("year-max-display").textContent = "2025";
@@ -1894,15 +1776,13 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           
           if (window.isAutoTrailerMode) {
             console.log("🔁 Auto mode - finding next trailer");
-            setTimeout(() => {
-              if (window.findTrailerAndPlay) {
-                try {
-                  window.findTrailerAndPlay();
-                } catch (error) {
-                  console.error("❌ Error in trailer ended callback:", error);
-                }
+            if (window.findTrailerAndPlay) {
+              try {
+                window.findTrailerAndPlay();
+              } catch (error) {
+                console.error("❌ Error in trailer ended callback:", error);
               }
-            }, 1000);
+            }
           } else {
             console.log("🎬 Single mode - trailer ended, staying open for user interaction");
             // In single trailer mode, stay open until user chooses to advance or close
@@ -1913,15 +1793,13 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           console.log("⚠️ Video unstarted - possible region/age restriction");
           if (window.isAutoTrailerMode) {
             console.log("🔄 Auto mode: Skipping restricted video");
-            setTimeout(() => {
-              if (window.findTrailerAndPlay) {
-                try {
-                  window.findTrailerAndPlay();
-                } catch (error) {
-                  console.error("❌ Error in unstarted video callback:", error);
-                }
+            if (window.findTrailerAndPlay) {
+              try {
+                window.findTrailerAndPlay();
+              } catch (error) {
+                console.error("❌ Error in unstarted video callback:", error);
               }
-            }, 2000);
+            }
           } else {
             console.log("🎬 Single mode: Video unstarted, staying open for user interaction");
             // In single trailer mode, stay open even for restricted videos until user chooses
@@ -1932,15 +1810,13 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           console.log("❌ Video error detected");
           if (window.isAutoTrailerMode) {
             console.log("🔄 Auto mode: Skipping error video");
-            setTimeout(() => {
-              if (window.findTrailerAndPlay) {
-                try {
-                  window.findTrailerAndPlay();
-                } catch (error) {
-                  console.error("❌ Error in error video callback:", error);
-                }
+            if (window.findTrailerAndPlay) {
+              try {
+                window.findTrailerAndPlay();
+              } catch (error) {
+                console.error("❌ Error in error video callback:", error);
               }
-            }, 2000);
+            }
           } else {
             console.log("🎬 Single mode: Video error detected, staying open for user interaction");
             // In single trailer mode, stay open even for error videos until user chooses
@@ -2201,11 +2077,15 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         }
       }
       
-      // Clear any existing auto-trailer timer
-      if (window.autoTrailerTimer) {
-        console.log("🎥 Clearing auto-trailer timer");
-        clearTimeout(window.autoTrailerTimer);
-        window.autoTrailerTimer = null;
+      // Clear any existing iframe message handlers
+      if (existingSingleIframe && existingSingleIframe._messageHandler) {
+        window.removeEventListener('message', existingSingleIframe._messageHandler);
+        console.log("🎥 Cleared single iframe message handler");
+      }
+      
+      if (existingAutoIframe && existingAutoIframe._messageHandler) {
+        window.removeEventListener('message', existingAutoIframe._messageHandler);
+        console.log("🎥 Cleared auto iframe message handler");
       }
       
       // No timers to clear - trailers play through naturally
@@ -2248,17 +2128,25 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         // Set up auto-trailer event detection
         setupAutoTrailerEventDetection(iframe, videoId);
         
-        // Simple autoplay - just send one play command
+        // Subscribe to YouTube iframe events and start playback
         iframe.addEventListener('load', () => {
           console.log("🎥 Auto-trailer iframe loaded");
-          // Send play command after a short delay
-          setTimeout(() => {
-            try {
-              iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-            } catch (error) {
-              console.log("🎥 Autoplay command failed:", error);
-            }
-          }, 1000);
+          try {
+            // Register as a listener and subscribe to state/error events
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 'auto' }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onError'] }), '*');
+            // Start playback
+            setTimeout(() => {
+              try {
+                iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+              } catch (error) {
+                console.log("🎥 Autoplay command failed:", error);
+              }
+            }, 150);
+          } catch (error) {
+            console.log("🎥 Iframe messaging setup failed:", error);
+          }
         });
         
       } else {
@@ -2279,17 +2167,25 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         // Mark iframe player as active
         window.iframePlayerActive = true;
         
-        // Simple autoplay - just send one play command
+        // Subscribe to YouTube iframe events and start playback
         iframe.addEventListener('load', () => {
           console.log("🎥 Single iframe loaded");
-          // Send play command after a short delay
-          setTimeout(() => {
-            try {
-              iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-            } catch (error) {
-              console.log("🎥 Autoplay command failed:", error);
-            }
-          }, 1000);
+          try {
+            // Register as a listener and subscribe to state/error events
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 'single' }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onError'] }), '*');
+            // Start playback
+            setTimeout(() => {
+              try {
+                iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+              } catch (error) {
+                console.log("🎥 Autoplay command failed:", error);
+              }
+            }, 150);
+          } catch (error) {
+            console.log("🎥 Iframe messaging setup failed:", error);
+          }
         });
       }
       
@@ -2395,28 +2291,62 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       }
     }
     
-    // Simple auto-trailer event detection
+    // Iframe event detection that integrates with existing onPlayerStateChange
+    // This function listens for YouTube iframe messages and converts them to events
+    // that the existing onPlayerStateChange function can handle
     function setupAutoTrailerEventDetection(iframe, videoId) {
-      console.log("🎥 Setting up auto-trailer event detection for video:", videoId);
+      console.log("🎥 Setting up iframe event detection for video:", videoId);
       
-      // Simple approach: Use a reasonable duration timer for auto-advancement
-      // Most YouTube trailers are 2-3 minutes, so we'll use 3.5 minutes as a safe fallback
-      if (window.isAutoTrailerMode) {
-        console.log("🎥 Starting auto-advancement timer for auto-trailer mode");
-        
-        window.autoTrailerTimer = setTimeout(() => {
-          if (window.isAutoTrailerMode && !window.manualNextPressed) {
-            console.log("🎥 Auto-advancement timer triggered - advancing to next trailer");
-            try {
-              if (window.findTrailerAndPlay) {
-                window.findTrailerAndPlay();
+      // Listen for YouTube iframe messages to detect video state changes
+      // YouTube iframe messages include: onStateChange, onReady, onPlaybackQualityChange, etc.
+      const messageHandler = (event) => {
+        if (event.origin === 'https://www.youtube.com') {
+          try {
+            const data = JSON.parse(event.data);
+            console.log("🎥 YouTube iframe message received:", data);
+            
+            if (data.event === 'onStateChange') {
+              console.log("🎥 Iframe state change detected:", data.info);
+              
+              // YouTube Player States:
+              // -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
+              
+              // Create a synthetic event object that matches what onPlayerStateChange expects
+              const syntheticEvent = {
+                data: data.info,
+                target: iframe
+              };
+              
+              // Call the existing onPlayerStateChange function
+              // This function already handles auto-advancement logic for both modes
+              if (window.onPlayerStateChange) {
+                console.log("🎥 Calling onPlayerStateChange with iframe state:", data.info);
+                window.onPlayerStateChange(syntheticEvent);
+              } else {
+                console.warn("⚠️ onPlayerStateChange function not found");
               }
-            } catch (error) {
-              console.error("❌ Error in auto-advancement:", error);
             }
+            
+            // Handle error events from iframe
+            if (data.event === 'onError') {
+              console.log("🎥 Iframe error event detected:", data);
+              const syntheticEvent = { data: -1, target: iframe };
+              if (window.onPlayerStateChange) {
+                console.log("🎥 Calling onPlayerStateChange with iframe error -> -1");
+                window.onPlayerStateChange(syntheticEvent);
+              }
+            }
+          } catch (error) {
+            // Ignore parsing errors for non-JSON messages
           }
-        }, 210000); // 3.5 minutes
-      }
+        }
+      };
+      
+      // Add message listener
+      window.addEventListener('message', messageHandler);
+      
+      // Store the handler for cleanup
+      iframe._messageHandler = messageHandler;
     }
     
 
@@ -2484,23 +2414,28 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       // Clear the player div and remove any players
       const playerDiv = document.getElementById('player');
       if (playerDiv) {
-        // Remove both types of iframe players
-        const singleIframe = document.getElementById('single-iframe-player');
-        const autoIframe = document.getElementById('auto-iframe-player');
-        if (singleIframe) {
-          singleIframe.remove();
-          console.log("🎥 Removed single iframe player");
-        }
-        if (autoIframe) {
-          autoIframe.remove();
-          console.log("🎥 Removed auto iframe player");
+        // Clear iframe message handlers if they exist
+        const singleIframeEl = document.getElementById('single-iframe-player');
+        const autoIframeEl = document.getElementById('auto-iframe-player');
+        
+        if (singleIframeEl && singleIframeEl._messageHandler) {
+          window.removeEventListener('message', singleIframeEl._messageHandler);
+          console.log("🎥 Cleared single iframe message handler");
         }
         
-        // Clear auto-trailer timer if it exists
-        if (window.autoTrailerTimer) {
-          clearTimeout(window.autoTrailerTimer);
-          window.autoTrailerTimer = null;
-          console.log("🎥 Cleared auto-trailer timer");
+        if (autoIframeEl && autoIframeEl._messageHandler) {
+          window.removeEventListener('message', autoIframeEl._messageHandler);
+          console.log("🎥 Cleared auto iframe message handler");
+        }
+        
+        // Remove both types of iframe players
+        if (singleIframeEl) {
+          singleIframeEl.remove();
+          console.log("🎥 Removed single iframe player");
+        }
+        if (autoIframeEl) {
+          autoIframeEl.remove();
+          console.log("🎥 Removed auto iframe player");
         }
         
         playerDiv.innerHTML = '';
@@ -2523,17 +2458,26 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         overlay.style.pointerEvents = 'none';
       });
       
-      // Restart auto-fetch if not in auto-trailer mode
-      if (!window.isAutoTrailerMode) {
-        console.log("🔄 Restarting auto-fetch after trailer close");
-        // Start the visual countdown timer immediately
-        startFetchCountdown(20000); // 20 seconds countdown
-        setTimeout(() => {
-          startAutoFetch();
-        }, 20000);
-      } else {
-        console.log("⏹️ Auto-trailer mode active — not restarting auto-fetch");
+      // After closing, always return to suggestion mode with 20s countdown
+      // If auto-trailer mode was ON, turn it OFF and update the button UI
+      if (window.isAutoTrailerMode) {
+        window.isAutoTrailerMode = false;
+        window.manualNextPressed = false;
+        const button = document.getElementById('overlay-auto-toggle');
+        if (button) {
+          button.textContent = "Auto: OFF";
+          button.style.backgroundColor = "";
+          button.style.color = "";
+        }
+        console.log("⏹️ Auto-trailer mode disabled on close");
       }
+
+      console.log("🔄 Restarting auto-fetch after trailer close");
+      // Start the visual countdown timer immediately
+      startFetchCountdown(20000); // 20 seconds countdown
+      setTimeout(() => {
+        startAutoFetch();
+      }, 20000);
     }
 
     // UI Application Functions
@@ -2712,11 +2656,18 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           // Reset manual control flag when starting new trailer
           window.manualNextPressed = false;
           
-                    // Clear any existing timers when starting new trailer
-          if (window.autoTrailerTimer) {
-            clearTimeout(window.autoTrailerTimer);
-            window.autoTrailerTimer = null;
-            console.log("🛑 Cleared existing auto-trailer timer when starting new trailer");
+                    // Clear any existing iframe message handlers when starting new trailer
+          const singleIframe2 = document.getElementById('single-iframe-player');
+          const autoIframe2 = document.getElementById('auto-iframe-player');
+          
+          if (singleIframe2 && singleIframe2._messageHandler) {
+            window.removeEventListener('message', singleIframe2._messageHandler);
+            console.log("🛑 Cleared existing single iframe message handler");
+          }
+          
+          if (autoIframe2 && autoIframe2._messageHandler) {
+            window.removeEventListener('message', autoIframe2._messageHandler);
+            console.log("🛑 Cleared existing auto iframe message handler");
           }
           
           // Update UI with film data
@@ -2811,8 +2762,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
     }
 
     function applyPreset(presetValue) {
-      const yearMinSlider = document.getElementById("year-min");
-      const yearMaxSlider = document.getElementById("year-max");
+          const yearMinSlider = document.getElementById("year-min");
+          const yearMaxSlider = document.getElementById("year-max");
       const countrySelect = document.getElementById("country-select");
       const typeSelect = document.getElementById("type-select");
 
@@ -3043,11 +2994,18 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         console.log("🛑 Stopped background auto-fetch");
       }
       
-      // Clear any existing timers
-      if (window.autoTrailerTimer) {
-        clearTimeout(window.autoTrailerTimer);
-        window.autoTrailerTimer = null;
-        console.log("🛑 Cleared existing auto-trailer timer");
+      // Clear any existing iframe message handlers
+      const singleIframe3 = document.getElementById('single-iframe-player');
+      const autoIframe3 = document.getElementById('auto-iframe-player');
+      
+      if (singleIframe3 && singleIframe3._messageHandler) {
+        window.removeEventListener('message', singleIframe3._messageHandler);
+        console.log("🛑 Cleared existing single iframe message handler");
+      }
+      
+      if (autoIframe3 && autoIframe3._messageHandler) {
+        window.removeEventListener('message', autoIframe3._messageHandler);
+        console.log("🛑 Cleared existing auto iframe message handler");
       }
       
       window.isAutoTrailerMode = true;
@@ -3117,11 +3075,18 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       
       window.manualNextPressed = true; // Set manual control flag
       
-      // Clear all timers when manually skipping
-      if (window.autoTrailerTimer) {
-        clearTimeout(window.autoTrailerTimer);
-        window.autoTrailerTimer = null;
-        console.log("🛑 Cleared auto-trailer timer when manually skipping");
+      // Clear all iframe message handlers when manually skipping
+      const singleIframe4 = document.getElementById('single-iframe-player');
+      const autoIframe4 = document.getElementById('auto-iframe-player');
+      
+      if (singleIframe4 && singleIframe4._messageHandler) {
+        window.removeEventListener('message', singleIframe4._messageHandler);
+        console.log("🛑 Cleared single iframe message handler when manually skipping");
+      }
+      
+      if (autoIframe4 && autoIframe4._messageHandler) {
+        window.removeEventListener('message', autoIframe4._messageHandler);
+        console.log("🛑 Cleared auto iframe message handler when manually skipping");
       }
       
       // No timers to clear - trailers play through naturally
@@ -3140,11 +3105,18 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         button.style.backgroundColor = "#ffcc00";
         button.style.color = "#000";
         
-        // Clear any existing timers
-        if (window.autoTrailerTimer) {
-          clearTimeout(window.autoTrailerTimer);
-          window.autoTrailerTimer = null;
-          console.log("🛑 Cleared existing auto-trailer timer when enabling auto mode");
+        // Clear any existing iframe message handlers
+        const singleIframe5 = document.getElementById('single-iframe-player');
+        const autoIframe5 = document.getElementById('auto-iframe-player');
+        
+        if (singleIframe5 && singleIframe5._messageHandler) {
+          window.removeEventListener('message', singleIframe5._messageHandler);
+          console.log("🛑 Cleared existing single iframe message handler when enabling auto mode");
+        }
+        
+        if (autoIframe5 && autoIframe5._messageHandler) {
+          window.removeEventListener('message', autoIframe5._messageHandler);
+          console.log("🛑 Cleared existing auto iframe message handler when enabling auto mode");
         }
         
         // Start playing trailers immediately when auto-trailer mode is enabled
@@ -3179,11 +3151,18 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         // Reset manual control flag when disabling auto-trailer mode
         window.manualNextPressed = false;
         
-        // Clear all timers when switching to single mode
-        if (window.autoTrailerTimer) {
-          clearTimeout(window.autoTrailerTimer);
-          window.autoTrailerTimer = null;
-          console.log("🛑 Cleared auto-trailer timer when switching to single mode");
+        // Clear all iframe message handlers when switching to single mode
+        const singleIframe6 = document.getElementById('single-iframe-player');
+        const autoIframe6 = document.getElementById('auto-iframe-player');
+        
+        if (singleIframe6 && singleIframe6._messageHandler) {
+          window.removeEventListener('message', singleIframe6._messageHandler);
+          console.log("🛑 Cleared single iframe message handler when switching to single mode");
+        }
+        
+        if (autoIframe6 && autoIframe6._messageHandler) {
+          window.removeEventListener('message', autoIframe6._messageHandler);
+          console.log("🛑 Cleared auto iframe message handler when switching to single mode");
         }
         
         // No timers to clear - trailers play through naturally
@@ -3490,13 +3469,16 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       genreSelect.value = "Animation";
       window.appState.currentGenre = window.appState.genres.find(g => g.name === "Animation");
 
-      // Theme toggle
+      // Theme: make VCR mode the default
+      document.body.classList.add("vcr-mode");
       const themeButton = document.getElementById("theme-button");
       if (themeButton) {
+        // Update label to indicate toggling back to the other theme
+        themeButton.textContent = "🎬 Standard Mode";
         themeButton.onclick = () => {
           document.body.classList.toggle("vcr-mode");
           const isVcrMode = document.body.classList.contains("vcr-mode");
-          themeButton.textContent = isVcrMode ? "🎬 VCR Mode" : "🎬 VCR Mode";
+          themeButton.textContent = isVcrMode ? "🎬 Standard Mode" : "🎬 VCR Mode";
         };
       }
       
@@ -3572,7 +3554,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         });
       });
 
-      // Year range slider logic
+      // Year range slider logic (two-hand slider using two inputs)
       const yearMinSlider = document.getElementById("year-min");
       const yearMaxSlider = document.getElementById("year-max");
       
@@ -3580,7 +3562,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         const minValue = parseInt(e.target.value);
         const maxValue = parseInt(yearMaxSlider.value);
         if (minValue > maxValue) {
-          yearMaxSlider.value = minValue;
+          yearMaxSlider.value = String(minValue);
         }
         updateYearLabel();
       });
@@ -3589,7 +3571,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         const maxValue = parseInt(e.target.value);
         const minValue = parseInt(yearMinSlider.value);
         if (maxValue < minValue) {
-          yearMinSlider.value = maxValue;
+          yearMinSlider.value = String(maxValue);
         }
         updateYearLabel();
       });

@@ -1302,6 +1302,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
               <button onclick="window.open(window.appState.currentTMDBUrl, '_blank')" class="overlay-btn">TMDB</button>
               <button onclick="document.getElementById('save-button').click()" class="overlay-btn">Save</button>
         <button onclick="closeTrailer()" class="overlay-btn">Close</button>
+        <button onclick="testYouTubeAPI()" class="overlay-btn">Test API</button>
+
     </div>
   </div>
 
@@ -2213,178 +2215,203 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       
       // No timers to clear - trailers play through naturally
       
-      // IMPORTANT: Disable the YouTube API player to prevent conflicts
-      if (window.trailerPlayer && window.trailerPlayer.destroy) {
-        try {
-          window.trailerPlayer.destroy();
-          window.trailerPlayer = null;
-          window.youtubeReady = false;
-          console.log("🎥 Destroyed YouTube API player to prevent conflicts");
-        } catch (error) {
-          console.warn("⚠️ Could not destroy YouTube API player:", error);
-        }
-      }
-      
       // Clear the player div completely
       playerDiv.innerHTML = '';
       
-      const iframe = document.createElement('iframe');
-      iframe.width = '100%';
-      iframe.height = '100%';
-      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1`;
-      iframe.frameBorder = '0';
-      iframe.allowFullscreen = true;
-      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-      
-      // Set different IDs and behavior based on mode
+      // Use different approaches based on mode
       if (window.isAutoTrailerMode) {
-        iframe.id = 'auto-iframe-player';
-        console.log("🎥 Creating AUTO-TRAILER iframe player for video:", videoId);
+        // For auto-trailer mode, use YouTube Player API for reliable event detection
+        console.log("🎥 Creating AUTO-TRAILER player using YouTube API for video:", videoId);
+        
+        // Create a div for the YouTube Player API
+        const apiPlayerDiv = document.createElement('div');
+        apiPlayerDiv.id = 'youtube-api-player';
+        apiPlayerDiv.style.width = '100%';
+        apiPlayerDiv.style.height = '100%';
+        playerDiv.appendChild(apiPlayerDiv);
+        
+        // Initialize YouTube Player API
+        if (window.YT && window.YT.Player) {
+          console.log("🎥 YouTube API available, creating player");
+          createYouTubeAPIPlayer(videoId, 'auto');
+        } else {
+          console.log("🎥 YouTube API not ready, waiting...");
+          // Wait for YouTube API to be ready
+          setTimeout(() => {
+            if (window.YT && window.YT.Player) {
+              createYouTubeAPIPlayer(videoId, 'auto');
+            } else {
+              console.log("🎥 YouTube API still not ready, falling back to iframe");
+              createIframePlayer(videoId);
+            }
+          }, 1000);
+        }
       } else {
-        iframe.id = 'single-iframe-player';
+        // For single trailer mode, use basic iframe (stays open)
         console.log("🎥 Creating SINGLE-TRAILER iframe player for video:", videoId);
+        
+        const iframe = document.createElement('iframe');
+        iframe.width = '100%';
+        iframe.height = '100%';
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1`;
+        iframe.frameBorder = '0';
+        iframe.allowFullscreen = true;
+        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        iframe.id = 'single-iframe-player';
+        
+        playerDiv.appendChild(iframe);
+        console.log("🎥 Single iframe player created for video:", videoId);
+        
+        // Mark iframe player as active
+        window.iframePlayerActive = true;
       }
       
-      playerDiv.appendChild(iframe);
-      console.log("🎥 Iframe player created for video:", videoId);
+
+    }
+    
+    // Helper function to create YouTube Player API player
+    function createYouTubeAPIPlayer(videoId, mode) {
+      console.log("🎥 === CREATING YOUTUBE API PLAYER ===");
+      console.log("🎥 Video ID:", videoId);
+      console.log("🎥 Mode:", mode);
       
-      // Verify iframe was actually added
-      const addedIframe = playerDiv.querySelector(`#${iframe.id}`);
-      if (!addedIframe) {
-        console.error("❌ Failed to add iframe to player div");
+      // Wait for YouTube API to be ready
+      if (!window.YT || !window.YT.Player) {
+        console.log("🎥 YouTube API not ready, waiting...");
+        setTimeout(() => createYouTubeAPIPlayer(videoId, mode), 100);
         return;
       }
       
-      console.log("🎥 Iframe successfully added to player div");
+      const playerDiv = document.getElementById('youtube-api-player');
+      if (!playerDiv) {
+        console.error("❌ YouTube API player div not found");
+        return;
+      }
       
-      // Mark iframe player as active for auto-trailer mode
-      window.iframePlayerActive = true;
-      
-      // No fallback timeout - let trailers play through naturally
-      // The iframe message events will handle advancement when trailers actually end
-      
-      // Try to detect when video ends by monitoring iframe events
-      iframe.addEventListener('load', () => {
-        console.log("🎥 Iframe loaded, setting up event monitoring");
-        
-        // Check if the iframe loaded successfully
-        setTimeout(() => {
-          try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            if (iframeDoc && iframeDoc.body && iframeDoc.body.innerHTML.includes('Video unavailable')) {
-              console.error("❌ Video unavailable detected in iframe");
-              console.log("🔍 Debug: Video ID that failed:", videoId);
-              console.log("🔍 Debug: Iframe URL that failed:", iframe.src);
-              console.log("🔍 Debug: Iframe type:", iframe.id);
+      try {
+        // Create YouTube Player API instance
+        const player = new window.YT.Player('youtube-api-player', {
+          height: '100%',
+          width: '100%',
+          videoId: videoId,
+          playerVars: {
+            autoplay: 1,
+            controls: 1,
+            rel: 0,
+            modestbranding: 1,
+            playsinline: 1,
+            origin: window.location.origin,
+            enablejsapi: 1
+          },
+          events: {
+            onReady: (event) => {
+              console.log("🎥 YouTube API player ready");
+              // Force autoplay
+              event.target.playVideo();
+              console.log("🎥 Autoplay triggered");
+            },
+            onStateChange: (event) => {
+              console.log("🎥 YouTube API state change:", event.data);
               
-              // Handle based on iframe type
-              if (iframe.id === 'auto-iframe-player' && window.isAutoTrailerMode) {
-                console.log("🎥 AUTO-IFRAME: Video unavailable, auto-advancing to next trailer");
+              // State 0 = ended, State 1 = playing, State 2 = paused
+              if (event.data === 0) {
+                console.log("🎥 Video ended detected via YouTube API");
+                
+                if (mode === 'auto' && window.isAutoTrailerMode && !window.manualNextPressed) {
+                  console.log("🎥 AUTO-TRAILER: Video ended, auto-advancing to next trailer");
+                  // Auto-advance to next trailer
+                  if (window.findTrailerAndPlay) {
+                    try {
+                      window.findTrailerAndPlay();
+                    } catch (error) {
+                      console.error("❌ Error in auto-advance callback:", error);
+                    }
+                  }
+                } else {
+                  console.log("🎥 SINGLE-TRAILER: Video ended, staying open for user interaction");
+                  // Stay open for user interaction
+                }
+              } else if (event.data === 1) {
+                console.log("🎥 Video started playing");
+              } else if (event.data === 2) {
+                console.log("🎥 Video paused");
+              }
+            },
+            onError: (event) => {
+              console.error("❌ YouTube API player error:", event.data);
+              // Handle errors appropriately
+              if (mode === 'auto' && window.isAutoTrailerMode) {
+                console.log("🎥 Auto-advancing due to player error");
                 setTimeout(() => {
                   if (window.findTrailerAndPlay) {
                     window.findTrailerAndPlay();
                   }
                 }, 2000);
-              } else if (iframe.id === 'single-iframe-player') {
-                console.log("🎥 SINGLE-IFRAME: Video unavailable, staying open for user interaction");
-                // Single iframe stays open - user must decide what to do
               }
-            }
-          } catch (error) {
-            // Cross-origin restrictions might prevent accessing iframe content
-            console.log("🎥 Cannot check iframe content due to CORS restrictions");
-          }
-        }, 3000); // Check after 3 seconds
-        
-        // No duration timer - let trailers play through naturally
-        // The iframe message events will handle advancement when trailers actually end
-        
-        // Try to detect video end by monitoring iframe messages
-        window.addEventListener('message', (event) => {
-          if (event.origin === 'https://www.youtube.com') {
-            try {
-              const data = JSON.parse(event.data);
-              if (data.event === 'onStateChange') {
-                // State 0 = ended, State 1 = playing, State 2 = paused
-                if (data.info === 0) {
-                  // Check which iframe triggered this event
-                  const isAutoIframe = iframe.id === 'auto-iframe-player';
-                  const isSingleIframe = iframe.id === 'single-iframe-player';
-                  
-                  if (isAutoIframe && window.isAutoTrailerMode && !window.manualNextPressed) {
-                    console.log("🎥 AUTO-IFRAME detected video end - auto-advancing to next trailer");
-                    // Auto-iframe in auto-trailer mode: automatically advance
-                    if (window.findTrailerAndPlay) {
-                      try {
-                        window.findTrailerAndPlay();
-                      } catch (error) {
-                        console.error("❌ Error in auto-advance callback:", error);
-                      }
-                    }
-                  } else if (isSingleIframe) {
-                    console.log("🎥 SINGLE-IFRAME detected video end - staying open for user interaction");
-                    // Single iframe: stay open until user chooses to advance or close
-                  } else {
-                    console.log("🎥 Iframe video ended but conditions not met for auto-advancement");
-                  }
-                }
-              }
-            } catch (error) {
-              // Ignore parsing errors for non-JSON messages
             }
           }
         });
         
-        // Only skip trailers that are completely broken (iframe errors)
-        if (window.isAutoTrailerMode) {
-          // Check if trailer is completely broken after 10 seconds
-          setTimeout(() => {
-            if (window.isAutoTrailerMode && !window.manualNextPressed) {
-              const player = document.getElementById('player');
-              const autoIframe = player?.querySelector('#auto-iframe-player');
-              
-              if (autoIframe) {
-                // Only skip if auto-iframe is completely broken
-                try {
-                  const iframeSrc = autoIframe.src;
-                  if (!iframeSrc || iframeSrc.includes('error') || iframeSrc.includes('unavailable')) {
-                    console.log("🎥 AUTO-IFRAME trailer appears to be completely broken - auto-advancing to next trailer");
-                    // Auto-iframe in auto-trailer mode: skip broken trailers automatically
-                    if (window.findTrailerAndPlay) {
-                      try {
-                        window.findTrailerAndPlay();
-                      } catch (error) {
-                        console.error("❌ Error in broken trailer auto-advance callback:", error);
-                      }
-                    }
-                  }
-                } catch (error) {
-                  console.log("🎥 Cannot check auto-iframe src, continuing...");
-                }
-              }
-            }
-          }, 10000); // Check after 10 seconds for completely broken trailers
-          
-          // Add fallback auto-advancement timer for AUTO-IFRAME player in auto-trailer mode
-          // This ensures trailers advance even if the iframe message events don't work
-          console.log("🎥 Setting up fallback auto-advancement timer for AUTO-IFRAME player");
-          const fallbackTimer = setTimeout(() => {
-            if (window.isAutoTrailerMode && !window.manualNextPressed) {
-              console.log("🎥 Fallback timer triggered for AUTO-IFRAME - auto-advancing to next trailer");
-              if (window.findTrailerAndPlay) {
-                try {
-                  window.findTrailerAndPlay();
-                } catch (error) {
-                  console.error("❌ Error in fallback auto-advance callback:", error);
-                }
-              }
-            }
-          }, 300000); // 5 minutes fallback - adjust this value as needed
-          
-          // Store the timer so it can be cleared if needed
-          window.iframeFallbackTimer = fallbackTimer;
+        // Store the player instance
+        if (mode === 'auto') {
+          window.autoTrailerPlayer = player;
+          console.log("🎥 Auto-trailer player created and stored");
         }
-      });
+        
+        console.log("🎥 YouTube API player created successfully");
+        
+      } catch (error) {
+        console.error("❌ Error creating YouTube API player:", error);
+        // Fallback to iframe if API fails
+        console.log("🎥 Falling back to iframe player");
+        createIframePlayer(videoId);
+      }
+    }
+    
+    // Test function for YouTube API
+    function testYouTubeAPI() {
+      console.log("🧪 === TESTING YOUTUBE API ===");
+      console.log("🧪 window.YT:", !!window.YT);
+      console.log("🧪 window.YT.Player:", !!(window.YT && window.YT.Player));
+      console.log("🧪 window.youtubeReady:", window.youtubeReady);
+      console.log("🧪 window.trailerPlayer:", !!window.trailerPlayer);
+      
+      if (window.YT && window.YT.Player) {
+        console.log("✅ YouTube API is available");
+        // Try to create a test player
+        try {
+          const testDiv = document.createElement('div');
+          testDiv.id = 'test-player';
+          testDiv.style.width = '100px';
+          testDiv.style.height = '100px';
+          document.body.appendChild(testDiv);
+          
+          const testPlayer = new window.YT.Player('test-player', {
+            height: '100',
+            width: '100',
+            videoId: 'dQw4w9WgXcQ', // Test video
+            playerVars: {
+              autoplay: 0,
+              controls: 1
+            }
+          });
+          
+          console.log("✅ Test player created successfully");
+          
+          // Remove test player after 5 seconds
+          setTimeout(() => {
+            if (testDiv.parentNode) {
+              testDiv.parentNode.removeChild(testDiv);
+            }
+            console.log("🧹 Test player removed");
+          }, 5000);
+          
+        } catch (error) {
+          console.error("❌ Error creating test player:", error);
+        }
+      } else {
+        console.log("❌ YouTube API is NOT available");
+      }
     }
 
     // Fetch and Countdown Functions
@@ -2439,16 +2466,13 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         console.log("🛑 Cleared auto-advance timer");
       }
       
-      // Clear iframe fallback timer
-      if (window.iframeFallbackTimer) {
-        clearTimeout(window.iframeFallbackTimer);
-        window.iframeFallbackTimer = null;
-        console.log("🛑 Cleared iframe fallback timer");
-      }
+
+      
+
       
       // No timers to clear - trailers play through naturally
       
-      // Clear the player div and remove any iframes
+      // Clear the player div and remove any players
       const playerDiv = document.getElementById('player');
       if (playerDiv) {
         // Remove both types of iframe players
@@ -2462,6 +2486,18 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           autoIframe.remove();
           console.log("🎥 Removed auto iframe player");
         }
+        
+        // Destroy YouTube API player if it exists
+        if (window.autoTrailerPlayer && window.autoTrailerPlayer.destroy) {
+          try {
+            window.autoTrailerPlayer.destroy();
+            window.autoTrailerPlayer = null;
+            console.log("🎥 Destroyed YouTube API player");
+          } catch (error) {
+            console.warn("⚠️ Could not destroy YouTube API player:", error);
+          }
+        }
+        
         playerDiv.innerHTML = '';
       }
       
@@ -2671,12 +2707,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           // Reset manual control flag when starting new trailer
           window.manualNextPressed = false;
           
-          // Clear any existing iframe fallback timer when starting new trailer
-          if (window.iframeFallbackTimer) {
-            clearTimeout(window.iframeFallbackTimer);
-            window.iframeFallbackTimer = null;
-            console.log("🛑 Cleared existing iframe fallback timer when starting new trailer");
-          }
+          // Clear any existing timers when starting new trailer
+          
+
           
           // Update UI with film data
           applyFilmToUI(data);
@@ -3002,12 +3035,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         console.log("🛑 Stopped background auto-fetch");
       }
       
-      // Clear any existing iframe fallback timer
-      if (window.iframeFallbackTimer) {
-        clearTimeout(window.iframeFallbackTimer);
-        window.iframeFallbackTimer = null;
-        console.log("🛑 Cleared existing iframe fallback timer");
-      }
+      // Clear any existing timers
+
+
       
       window.isAutoTrailerMode = true;
       window.manualNextPressed = false; // Reset manual control flag
@@ -3076,12 +3106,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       
       window.manualNextPressed = true; // Set manual control flag
       
-      // Clear iframe fallback timer when manually skipping
-      if (window.iframeFallbackTimer) {
-        clearTimeout(window.iframeFallbackTimer);
-        window.iframeFallbackTimer = null;
-        console.log("🛑 Cleared iframe fallback timer when manually skipping");
-      }
+      // Clear all timers when manually skipping
+
+
       
       // No timers to clear - trailers play through naturally
       
@@ -3099,12 +3126,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         button.style.backgroundColor = "#ffcc00";
         button.style.color = "#000";
         
-        // Clear any existing iframe fallback timer
-        if (window.iframeFallbackTimer) {
-          clearTimeout(window.iframeFallbackTimer);
-          window.iframeFallbackTimer = null;
-          console.log("🛑 Cleared existing iframe fallback timer when enabling auto mode");
-        }
+        // Clear any existing timers
+
+
         
         // Start playing trailers immediately when auto-trailer mode is enabled
         if (window.appState.currentTrailerUrl && window.appState.currentTrailerUrl.includes("youtube.com")) {
@@ -3138,12 +3162,9 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         // Reset manual control flag when disabling auto-trailer mode
         window.manualNextPressed = false;
         
-        // Clear iframe fallback timer when switching to single mode
-        if (window.iframeFallbackTimer) {
-          clearTimeout(window.iframeFallbackTimer);
-          window.iframeFallbackTimer = null;
-          console.log("🛑 Cleared iframe fallback timer when switching to single mode");
-        }
+        // Clear all timers when switching to single mode
+
+
         
         // No timers to clear - trailers play through naturally
         
@@ -3577,7 +3598,11 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       updateYearLabel();
 
       // Auto-hide floating buttons
-      appState.fadeTimer = setTimeout(() => floatingButtons.classList.add("hidden"), 5000);
+      appState.fadeTimer = setTimeout(() => {
+        if (floatingButtons) {
+          floatingButtons.classList.add("hidden");
+        }
+      }, 5000);
       resetPanelFade();
 
       // Poster click for new title

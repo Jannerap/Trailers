@@ -2114,7 +2114,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         const iframe = document.createElement('iframe');
         iframe.width = '100%';
         iframe.height = '100%';
-        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1&showinfo=0&iv_load_policy=3&fs=1&wmode=transparent`;
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1&showinfo=0&iv_load_policy=3&fs=1&wmode=transparent&mute=0`;
         iframe.frameBorder = '0';
         iframe.allowFullscreen = true;
         iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
@@ -2156,7 +2156,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         const iframe = document.createElement('iframe');
         iframe.width = '100%';
         iframe.height = '100%';
-        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1&showinfo=0&iv_load_policy=3&fs=1&wmode=transparent`;
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1&showinfo=0&iv_load_policy=3&fs=1&wmode=transparent&mute=0`;
         iframe.frameBorder = '0';
         iframe.allowFullscreen = true;
         iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
@@ -2958,6 +2958,13 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       console.log("🎬 Playing single trailer:", trailerUrl);
       console.log("🎬 About to call playTrailer()...");
       window.isAutoTrailerMode = false;
+      
+      // Stop any background fetching when playing single trailer
+      if (window.appState.fetchTimer) {
+        clearTimeout(window.appState.fetchTimer);
+        window.appState.fetchTimer = null;
+        console.log("🛑 Stopped background auto-fetch for single trailer mode");
+      }
       
       // Add a small delay to ensure overlay is fully ready
       setTimeout(() => {

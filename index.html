@@ -1577,6 +1577,11 @@ body.vcr-mode .year-slider::-moz-range-thumb {
 
         const tmdbUrl = `https://www.themoviedb.org/${type}/${item.id}`;
 
+        // Normalize genre label for "All" so it is consistently capitalized
+        const currentGenreName = (window.appState?.currentGenre?.name?.toLowerCase() === 'all')
+          ? 'All'
+          : window.appState?.currentGenre?.name;
+
         // Save to Firebase
         const docRef = doc(db, "films", String(item.id));
         setDoc(docRef, {
@@ -1592,7 +1597,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           originCountry,
           trailerUrl: currentTrailerUrl,
           trailerKey: trailer ? trailer.key : null,
-          genre: window.appState.currentGenre.name,
+          genre: currentGenreName,
           type,
           tmdbUrl,
           director: director ?? "Unknown",
@@ -1621,7 +1626,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           originCountry,
           trailerUrl: currentTrailerUrl,
           trailerKey: trailer ? trailer.key : null,
-          genre: window.appState.currentGenre.name,
+          genre: currentGenreName,
           type,
           tmdbUrl,
           director: director ?? "Unknown",
@@ -2560,7 +2565,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
 
       // Update genre name
       const genreNameEl = document.getElementById("genre-name");
-      if (genreNameEl) genreNameEl.textContent = data.genre;
+      if (genreNameEl) genreNameEl.textContent = (data.genre && data.genre.toLowerCase() !== 'all') ? data.genre : 'All';
 
       // Update floating TMDB link
       const tmdbLink = document.getElementById("tmdb-link");
@@ -3525,7 +3530,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       const isAllSite = window.location.pathname.toLowerCase().includes('/all/');
       if (isAllSite) {
         genreSelect.value = "all";
-        window.appState.currentGenre = { name: "all", movie: "", tv: "" };
+        window.appState.currentGenre = { name: "All", movie: "", tv: "" };
         const genreBtnImg = document.getElementById("genre-button")?.querySelector("img");
         if (genreBtnImg) genreBtnImg.src = `all.png`;
       } else {

@@ -3495,8 +3495,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       document.getElementById("tmdb-button").disabled = true;
       genreSelect.innerHTML = `<option value="all">All</option>` + 
         window.appState.genres.map(g => `<option value="${g.name}">${g.name}</option>`).join("");
-      genreSelect.value = "Animation";
-      window.appState.currentGenre = window.appState.genres.find(g => g.name === "Animation");
+      genreSelect.value = "all";
+      window.appState.currentGenre = { name: "All", movie: "", tv: "" };
+      const genreBtnImg = document.getElementById("genre-button")?.querySelector("img");
+      if (genreBtnImg) genreBtnImg.src = `all.png`;
 
       // Theme: make VCR mode the default
       document.body.classList.add("vcr-mode");

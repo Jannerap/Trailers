@@ -1192,8 +1192,6 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         this.swipeState = "poster";
         this.failedFetchCount = 0;
         this.MAX_FAILED_FETCHES = 5;
-        this.recentIdsSet = new Set();
-        this.recentIdsQueue = [];
         
         // Timers
         this.panelTimer = null;
@@ -1336,8 +1334,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
             return Math.min(totalPages, 500); // Search more pages for low-result genres
           } else if (totalResults > 10000) {
             console.log(`✅ High results (${totalResults}) - using standard page range`);
-            // When no specific genre is selected (All), widen the page range to reduce repeats
-            return Math.min(totalPages, genreId ? 80 : 500);
+            return Math.min(totalPages, 80); // Standard range for popular genres
           } else {
             return Math.min(totalPages, 200); // Balanced range
           }
@@ -1440,7 +1437,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
                 const altParams = { ...params, with_genres: altGenreId, page: 1 };
                 try {
                   const altData = await this.makeRequest(`/discover/${type}`, altParams);
-              if (altData.results && altData.results.length > 0) {
+                  if (altData.results && altData.results.length > 0) {
                     console.log(`✅ Found results by switching genre to: ${g.name}`);
                     // Update current genre in app state and UI
                     window.appState.currentGenre = g;
@@ -1449,10 +1446,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
                     const genreBtnImg = document.getElementById("genre-button")?.querySelector("img");
                     if (genreBtnImg) genreBtnImg.src = `${g.name.toLowerCase()}.png`;
 
-                    const altCandidates = altData.results.filter(r => r?.poster_path && !window.appState.recentIdsSet?.has(r.id));
-                    const altItem = (altCandidates.length > 0
-                      ? altCandidates[Math.floor(Math.random() * altCandidates.length)]
-                      : (altData.results.find(r => r?.poster_path) || altData.results[Math.floor(Math.random() * altData.results.length)]));
+                    const altItem = altData.results[Math.floor(Math.random() * altData.results.length)];
                     // Skip if missing poster to maintain quality
                     if (!altItem?.poster_path) continue;
 
@@ -1484,10 +1478,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
               
               if (relaxedData.results && relaxedData.results.length > 0) {
                 console.log("✅ Found results with relaxed filters");
-                const relaxedCandidates = relaxedData.results.filter(r => r?.poster_path && !window.appState.recentIdsSet?.has(r.id));
-                const item = (relaxedCandidates.length > 0
-                  ? relaxedCandidates[Math.floor(Math.random() * relaxedCandidates.length)]
-                  : (relaxedData.results.find(r => r?.poster_path) || relaxedData.results[Math.floor(Math.random() * relaxedData.results.length)]));
+                const item = relaxedData.results[Math.floor(Math.random() * relaxedData.results.length)];
                 const detailData = await this.makeRequest(`/${type}/${item.id}`, {
                   language: 'en-US',
                   append_to_response: 'credits,videos'
@@ -1502,10 +1493,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
             return false;
           }
 
-          const candidates = data.results.filter(r => r?.poster_path && !window.appState.recentIdsSet?.has(r.id));
-          const item = (candidates.length > 0
-            ? candidates[Math.floor(Math.random() * candidates.length)]
-            : (data.results.find(r => r?.poster_path) || data.results[Math.floor(Math.random() * data.results.length)]));
+          const item = data.results[Math.floor(Math.random() * data.results.length)];
           window.appState.failedFetchCount = 0;
 
           if (!item.poster_path) {
@@ -2522,19 +2510,6 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       console.log("📦 Current history count:", window.appState.fetchHistory.length);
       window.appState.swipeState = "poster";
 
-        // Track recent IDs to reduce repeats across random fetches
-        if (data?.id) {
-          const maxRecent = 50;
-          if (!window.appState.recentIdsSet.has(data.id)) {
-            window.appState.recentIdsSet.add(data.id);
-            window.appState.recentIdsQueue.push(data.id);
-            if (window.appState.recentIdsQueue.length > maxRecent) {
-              const oldId = window.appState.recentIdsQueue.shift();
-              window.appState.recentIdsSet.delete(oldId);
-            }
-          }
-        }
-
       // Store history (unless we're recalling one)
       if (!window.applyingFromHistory) {
         window.appState.fetchHistory.unshift(data);
@@ -3520,18 +3495,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       document.getElementById("tmdb-button").disabled = true;
       genreSelect.innerHTML = `<option value="all">All</option>` + 
         window.appState.genres.map(g => `<option value="${g.name}">${g.name}</option>`).join("");
-
-      // Detect if this build is served from an "All" folder and default to All
-      const isAllSite = window.location.pathname.toLowerCase().includes('/all/');
-      if (isAllSite) {
-        genreSelect.value = "all";
-        window.appState.currentGenre = { name: "all", movie: "", tv: "" };
-        const genreBtnImg = document.getElementById("genre-button")?.querySelector("img");
-        if (genreBtnImg) genreBtnImg.src = `all.png`;
-      } else {
-        genreSelect.value = "Animation";
-        window.appState.currentGenre = window.appState.genres.find(g => g.name === "Animation");
-      }
+      genreSelect.value = "Animation";
+      window.appState.currentGenre = window.appState.genres.find(g => g.name === "Animation");
 
       // Theme: make VCR mode the default
       document.body.classList.add("vcr-mode");

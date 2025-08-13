@@ -1302,7 +1302,6 @@ body.vcr-mode .year-slider::-moz-range-thumb {
               <button onclick="window.open(window.appState.currentTMDBUrl, '_blank')" class="overlay-btn">TMDB</button>
               <button onclick="document.getElementById('save-button').click()" class="overlay-btn">Save</button>
         <button onclick="closeTrailer()" class="overlay-btn">Close</button>
-        <button onclick="testYouTubeAPI()" class="overlay-btn">Test API</button>
 
     </div>
   </div>
@@ -1959,44 +1958,11 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       }
     };
 
-    window.onYouTubeIframeAPIReady = function () {
-      window.trailerPlayer = new YT.Player("player", {
-        height: "390",
-        width: "640",
-        videoId: "",
-        playerVars: {
-          enablejsapi: 1,
-          controls: 1,
-          modestbranding: 1,
-          rel: 0,
-          showinfo: 0,
-          origin: window.location.origin
-        },
-        events: {
-          onReady: () => {
-            window.youtubeReady = true;
-            console.log("✅ YouTube Player is fully ready");
-            
-            // Test if events are working
-            setTimeout(() => {
-              console.log("🧪 Testing player event system...");
-              console.log("🧪 Player object:", window.trailerPlayer);
-              console.log("🧪 Player ready state:", window.trailerPlayer.getPlayerState());
-            }, 1000);
-          },
-          onStateChange: (event) => {
-            // Call the global function if it exists
-            if (window.onPlayerStateChange) {
-              window.onPlayerStateChange(event);
-            } else {
-              console.warn("⚠️ onPlayerStateChange not yet defined");
-            }
-          }
-        }
-      });
-
-      console.log("✅ YouTube Player ready");
-    };
+    // DISABLED: YouTube API Player creation to prevent conflicts with iframe players
+    // window.onYouTubeIframeAPIReady = function () {
+    //   console.log("🎥 YouTube API ready - but not creating player to avoid iframe conflicts");
+    //   window.youtubeReady = true;
+    // };
 
     // Poster loading
     const poster = document.getElementById('movie-poster');
@@ -2213,10 +2179,52 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         existingAutoIframe.remove();
       }
       
+      // Clear any existing YouTube API players
+      if (window.autoTrailerPlayer) {
+        console.log("🎥 Destroying existing auto-trailer YouTube API player");
+        try {
+          window.autoTrailerPlayer.destroy();
+          window.autoTrailerPlayer = null;
+        } catch (error) {
+          console.log("🎥 Error destroying auto-trailer player:", error);
+        }
+      }
+      
+      // Clear any existing trailer player
+      if (window.trailerPlayer) {
+        console.log("🎥 Destroying existing trailer YouTube API player");
+        try {
+          window.trailerPlayer.destroy();
+          window.trailerPlayer = null;
+        } catch (error) {
+          console.log("🎥 Error destroying trailer player:", error);
+        }
+      }
+      
+      // Clear any existing auto-trailer timer
+      if (window.autoTrailerTimer) {
+        console.log("🎥 Clearing auto-trailer timer");
+        clearTimeout(window.autoTrailerTimer);
+        window.autoTrailerTimer = null;
+      }
+      
       // No timers to clear - trailers play through naturally
       
       // Clear the player div completely
       playerDiv.innerHTML = '';
+      
+      // Also remove any YouTube API player elements that might be hidden
+      const youtubeApiPlayer = document.getElementById('youtube-api-player');
+      if (youtubeApiPlayer) {
+        console.log("🎥 Removing youtube-api-player div");
+        youtubeApiPlayer.remove();
+      }
+      
+      const testPlayer = document.getElementById('test-player');
+      if (testPlayer) {
+        console.log("🎥 Removing test-player div");
+        testPlayer.remove();
+      }
       
       // Use iframes for both modes - more reliable for autoplay
       if (window.isAutoTrailerMode) {
@@ -2226,20 +2234,32 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         const iframe = document.createElement('iframe');
         iframe.width = '100%';
         iframe.height = '100%';
-        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1`;
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1&mute=1&showinfo=0&iv_load_policy=3&fs=1&wmode=transparent`;
         iframe.frameBorder = '0';
         iframe.allowFullscreen = true;
         iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
         iframe.id = 'auto-iframe-player';
-        
         playerDiv.appendChild(iframe);
         console.log("🎥 Auto-trailer iframe player created for video:", videoId);
         
         // Mark iframe player as active
         window.iframePlayerActive = true;
         
-        // Set up enhanced event detection for auto-trailer mode
+        // Set up auto-trailer event detection
         setupAutoTrailerEventDetection(iframe, videoId);
+        
+        // Simple autoplay - just send one play command
+        iframe.addEventListener('load', () => {
+          console.log("🎥 Auto-trailer iframe loaded");
+          // Send play command after a short delay
+          setTimeout(() => {
+            try {
+              iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+            } catch (error) {
+              console.log("🎥 Autoplay command failed:", error);
+            }
+          }, 1000);
+        });
         
       } else {
         // For single trailer mode, use basic iframe (stays open)
@@ -2248,17 +2268,29 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         const iframe = document.createElement('iframe');
         iframe.width = '100%';
         iframe.height = '100%';
-        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1`;
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1&playsinline=1&controls=1&mute=1&showinfo=0&iv_load_policy=3&fs=1&wmode=transparent`;
         iframe.frameBorder = '0';
         iframe.allowFullscreen = true;
         iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
         iframe.id = 'single-iframe-player';
-        
         playerDiv.appendChild(iframe);
         console.log("🎥 Single iframe player created for video:", videoId);
         
         // Mark iframe player as active
         window.iframePlayerActive = true;
+        
+        // Simple autoplay - just send one play command
+        iframe.addEventListener('load', () => {
+          console.log("🎥 Single iframe loaded");
+          // Send play command after a short delay
+          setTimeout(() => {
+            try {
+              iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+            } catch (error) {
+              console.log("🎥 Autoplay command failed:", error);
+            }
+          }, 1000);
+        });
       }
       
 
@@ -2363,139 +2395,33 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       }
     }
     
-    // Enhanced event detection for auto-trailer iframes
+    // Simple auto-trailer event detection
     function setupAutoTrailerEventDetection(iframe, videoId) {
-      console.log("🎥 Setting up enhanced event detection for auto-trailer iframe");
+      console.log("🎥 Setting up auto-trailer event detection for video:", videoId);
       
-      // Method 1: YouTube iframe message events (most reliable)
-      const messageHandler = (event) => {
-        if (event.origin === 'https://www.youtube.com') {
-          try {
-            const data = JSON.parse(event.data);
-            console.log("🎥 YouTube message received:", data);
-            
-            if (data.event === 'onStateChange') {
-              console.log("🎥 State change detected:", data.info, "for auto-trailer iframe");
-              
-              // State 0 = ended, State 1 = playing, State 2 = paused
-              if (data.info === 0) {
-                console.log("🎥 Video ended detected via YouTube message");
-                
-                if (window.isAutoTrailerMode && !window.manualNextPressed) {
-                  console.log("🎥 AUTO-TRAILER: Video ended, auto-advancing to next trailer");
-                  // Auto-advance to next trailer
-                  if (window.findTrailerAndPlay) {
-                    try {
-                      window.findTrailerAndPlay();
-                    } catch (error) {
-                      console.error("❌ Error in auto-advance callback:", error);
-                    }
-                  }
-                }
-              } else if (data.info === 1) {
-                console.log("🎥 Video started playing");
-              } else if (data.info === 2) {
-                console.log("🎥 Video paused");
-              }
-            }
-          } catch (error) {
-            // Ignore parsing errors for non-JSON messages
-          }
-        }
-      };
-      
-      // Add message listener
-      window.addEventListener('message', messageHandler);
-      
-      // Method 2: Iframe load event with polling fallback
-      iframe.addEventListener('load', () => {
-        console.log("🎥 Auto-trailer iframe loaded");
+      // Simple approach: Use a reasonable duration timer for auto-advancement
+      // Most YouTube trailers are 2-3 minutes, so we'll use 3.5 minutes as a safe fallback
+      if (window.isAutoTrailerMode) {
+        console.log("🎥 Starting auto-advancement timer for auto-trailer mode");
         
-        // Start polling for video end as a fallback
-        if (window.isAutoTrailerMode) {
-          console.log("🎥 Starting fallback polling for auto-trailer iframe");
-          
-          const pollInterval = setInterval(() => {
-            // Check if we should stop polling
-            if (!window.isAutoTrailerMode || window.manualNextPressed) {
-              clearInterval(pollInterval);
-              return;
-            }
-            
-            // Check if iframe is still valid
-            if (!document.contains(iframe)) {
-              clearInterval(pollInterval);
-              return;
-            }
-            
-            // Try to detect if video has ended by checking iframe state
+        window.autoTrailerTimer = setTimeout(() => {
+          if (window.isAutoTrailerMode && !window.manualNextPressed) {
+            console.log("🎥 Auto-advancement timer triggered - advancing to next trailer");
             try {
-              // This is a simple heuristic - in practice, YouTube messages are more reliable
-              console.log("🎥 Polling check for auto-trailer iframe");
+              if (window.findTrailerAndPlay) {
+                window.findTrailerAndPlay();
+              }
             } catch (error) {
-              // Ignore errors
+              console.error("❌ Error in auto-advancement:", error);
             }
-          }, 5000); // Check every 5 seconds
-          
-          // Store the interval so it can be cleared if needed
-          window.autoTrailerPollInterval = pollInterval;
-        }
-      });
-      
-      // Method 3: Global message listener for debugging
-      if (!window.globalMessageListener) {
-        window.globalMessageListener = (event) => {
-          console.log("🌐 GLOBAL: Message from:", event.origin, "Data:", event.data);
-        };
-        window.addEventListener('message', window.globalMessageListener);
+          }
+        }, 210000); // 3.5 minutes
       }
     }
     
-    // Test function for YouTube API
-    function testYouTubeAPI() {
-      console.log("🧪 === TESTING YOUTUBE API ===");
-      console.log("🧪 window.YT:", !!window.YT);
-      console.log("🧪 window.YT.Player:", !!(window.YT && window.YT.Player));
-      console.log("🧪 window.youtubeReady:", window.youtubeReady);
-      console.log("🧪 window.trailerPlayer:", !!window.trailerPlayer);
-      
-      if (window.YT && window.YT.Player) {
-        console.log("✅ YouTube API is available");
-        // Try to create a test player
-        try {
-          const testDiv = document.createElement('div');
-          testDiv.id = 'test-player';
-          testDiv.style.width = '100px';
-          testDiv.style.height = '100px';
-          document.body.appendChild(testDiv);
-          
-          const testPlayer = new window.YT.Player('test-player', {
-            height: '100',
-            width: '100',
-            videoId: 'dQw4w9WgXcQ', // Test video
-            playerVars: {
-              autoplay: 0,
-              controls: 1
-            }
-          });
-          
-          console.log("✅ Test player created successfully");
-          
-          // Remove test player after 5 seconds
-          setTimeout(() => {
-            if (testDiv.parentNode) {
-              testDiv.parentNode.removeChild(testDiv);
-            }
-            console.log("🧹 Test player removed");
-          }, 5000);
-          
-        } catch (error) {
-          console.error("❌ Error creating test player:", error);
-        }
-      } else {
-        console.log("❌ YouTube API is NOT available");
-      }
-    }
+
+    
+
 
     // Fetch and Countdown Functions
     function startFetchCountdown(duration = 60000) {
@@ -2570,11 +2496,11 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           console.log("🎥 Removed auto iframe player");
         }
         
-        // Clear auto-trailer polling interval if it exists
-        if (window.autoTrailerPollInterval) {
-          clearInterval(window.autoTrailerPollInterval);
-          window.autoTrailerPollInterval = null;
-          console.log("🎥 Cleared auto-trailer polling interval");
+        // Clear auto-trailer timer if it exists
+        if (window.autoTrailerTimer) {
+          clearTimeout(window.autoTrailerTimer);
+          window.autoTrailerTimer = null;
+          console.log("🎥 Cleared auto-trailer timer");
         }
         
         playerDiv.innerHTML = '';
@@ -2787,10 +2713,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           window.manualNextPressed = false;
           
                     // Clear any existing timers when starting new trailer
-          if (window.autoTrailerPollInterval) {
-            clearInterval(window.autoTrailerPollInterval);
-            window.autoTrailerPollInterval = null;
-            console.log("🛑 Cleared existing auto-trailer polling interval when starting new trailer");
+          if (window.autoTrailerTimer) {
+            clearTimeout(window.autoTrailerTimer);
+            window.autoTrailerTimer = null;
+            console.log("🛑 Cleared existing auto-trailer timer when starting new trailer");
           }
           
           // Update UI with film data
@@ -3118,10 +3044,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       }
       
       // Clear any existing timers
-      if (window.autoTrailerPollInterval) {
-        clearInterval(window.autoTrailerPollInterval);
-        window.autoTrailerPollInterval = null;
-        console.log("🛑 Cleared existing auto-trailer polling interval");
+      if (window.autoTrailerTimer) {
+        clearTimeout(window.autoTrailerTimer);
+        window.autoTrailerTimer = null;
+        console.log("🛑 Cleared existing auto-trailer timer");
       }
       
       window.isAutoTrailerMode = true;
@@ -3192,10 +3118,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
       window.manualNextPressed = true; // Set manual control flag
       
       // Clear all timers when manually skipping
-      if (window.autoTrailerPollInterval) {
-        clearInterval(window.autoTrailerPollInterval);
-        window.autoTrailerPollInterval = null;
-        console.log("🛑 Cleared auto-trailer polling interval when manually skipping");
+      if (window.autoTrailerTimer) {
+        clearTimeout(window.autoTrailerTimer);
+        window.autoTrailerTimer = null;
+        console.log("🛑 Cleared auto-trailer timer when manually skipping");
       }
       
       // No timers to clear - trailers play through naturally
@@ -3215,10 +3141,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         button.style.color = "#000";
         
         // Clear any existing timers
-        if (window.autoTrailerPollInterval) {
-          clearInterval(window.autoTrailerPollInterval);
-          window.autoTrailerPollInterval = null;
-          console.log("🛑 Cleared existing auto-trailer polling interval when enabling auto mode");
+        if (window.autoTrailerTimer) {
+          clearTimeout(window.autoTrailerTimer);
+          window.autoTrailerTimer = null;
+          console.log("🛑 Cleared existing auto-trailer timer when enabling auto mode");
         }
         
         // Start playing trailers immediately when auto-trailer mode is enabled
@@ -3254,10 +3180,10 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         window.manualNextPressed = false;
         
         // Clear all timers when switching to single mode
-        if (window.autoTrailerPollInterval) {
-          clearInterval(window.autoTrailerPollInterval);
-          window.autoTrailerPollInterval = null;
-          console.log("🛑 Cleared auto-trailer polling interval when switching to single mode");
+        if (window.autoTrailerTimer) {
+          clearTimeout(window.autoTrailerTimer);
+          window.autoTrailerTimer = null;
+          console.log("🛑 Cleared auto-trailer timer when switching to single mode");
         }
         
         // No timers to clear - trailers play through naturally
@@ -3731,23 +3657,42 @@ body.vcr-mode .year-slider::-moz-range-thumb {
         }
       };
 
-      // Mousemove reveal info panel
+      // Mousemove reveal info panel - with auto-trailer mode priority
       document.addEventListener("mousemove", () => {
         const now = Date.now();
         if (now - appState.lastMouseMoveTime < 200) return;
         appState.lastMouseMoveTime = now;
 
-        const infoPanel = document.getElementById("info-panel");
-
-        if (!infoPanel.classList.contains("expanded")) {
-          infoPanel.classList.remove("hidden");
-
-          clearTimeout(appState.panelFadeTimer);
-          appState.panelFadeTimer = setTimeout(() => {
-            if (!infoPanel.classList.contains("expanded")) {
-              infoPanel.classList.add("hidden");
-            }
-          }, 5000);
+        // When in auto-trailer mode, prioritize video player over info panel
+        if (window.isAutoTrailerMode && window.iframePlayerActive) {
+          // In auto-trailer mode, reduce info panel interference
+          // Only show info panel briefly and with longer fade delay
+          const infoPanel = document.getElementById("info-panel");
+          
+          if (!infoPanel.classList.contains("expanded")) {
+            infoPanel.classList.remove("hidden");
+            
+            clearTimeout(appState.panelFadeTimer);
+            appState.panelFadeTimer = setTimeout(() => {
+              if (!infoPanel.classList.contains("expanded")) {
+                infoPanel.classList.add("hidden");
+              }
+            }, 2000); // Shorter display time in auto-trailer mode
+          }
+        } else {
+          // Normal mode - standard info panel behavior
+          const infoPanel = document.getElementById("info-panel");
+          
+          if (!infoPanel.classList.contains("expanded")) {
+            infoPanel.classList.remove("hidden");
+            
+            clearTimeout(appState.panelFadeTimer);
+            appState.panelFadeTimer = setTimeout(() => {
+              if (!infoPanel.classList.contains("expanded")) {
+                infoPanel.classList.add("hidden");
+              }
+            }, 5000); // Standard display time
+          }
         }
       });
 

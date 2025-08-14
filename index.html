@@ -2821,6 +2821,7 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           const yearMaxSlider = document.getElementById("year-max");
       const countrySelect = document.getElementById("country-select");
       const typeSelect = document.getElementById("type-select");
+      const genreSelect = document.getElementById("genre-select");
 
       switch (presetValue) {
         case "usa-80s":
@@ -2890,6 +2891,8 @@ body.vcr-mode .year-slider::-moz-range-thumb {
           typeSelect.value = "all";
           break;
       }
+      // Ensure presets use the "All" genre now that it's explicit in the UI
+      if (genreSelect) genreSelect.value = "all";
       updateYearLabel();
     }
 
